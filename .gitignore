@@ -4,6 +4,7 @@ build/
 coverage/
 .vite/
 *.log
+*.tsbuildinfo
 
 .env
 .env.*

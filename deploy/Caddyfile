@@ -1,0 +1,17 @@
+mini.example.ru {
+    root * /srv/miniapp
+    encode zstd gzip
+
+    handle /api/* {
+        reverse_proxy app:3000
+    }
+
+    handle /webhook* {
+        reverse_proxy app:3000
+    }
+
+    handle {
+        try_files {path} /index.html
+        file_server
+    }
+}

@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    container_name: olymp_max_app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - BOT_TOKEN=${BOT_TOKEN}
+      - BOT_MODE=${BOT_MODE:-webhook}
+      - PUBLIC_URL=${PUBLIC_URL}
+      - MINIAPP_URL=${MINIAPP_URL}
+      - DEMO_MODE=${DEMO_MODE:-true}
+      - DATABASE_URL=postgres://${POSTGRES_USER:-olymp_user}:${POSTGRES_PASSWORD:-olymp_pass}@db:5432/${POSTGRES_DB:-olymp_db}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    container_name: olymp_max_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-olymp_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-olymp_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-olymp_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-olymp_user} -d ${POSTGRES_DB:-olymp_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: olymp_max_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:

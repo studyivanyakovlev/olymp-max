@@ -1,0 +1,23 @@
+{
+  "name": "olymp-max",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/shared",
+    "apps/server"
+  ],
+  "scripts": {
+    "local": "./start_local.sh",
+    "dev": "npm --workspace=apps/server run dev",
+    "build": "npm --workspaces run build",
+    "start": "npm --workspace=apps/server run start",
+    "seed": "npm --workspace=apps/server run seed",
+    "test": "npm --workspace=apps/server run test",
+    "simulator": "npm --workspace=apps/server run simulator",
+    "chat": "npm --workspace=apps/server run chat",
+    "lint": "npm --workspace=apps/server run lint"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.2"
+  }
+}

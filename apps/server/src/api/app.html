@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Олимпиадный навигатор — Каталог и личный кабинет</title>
+  
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --bg-card: rgba(22, 30, 49, 0.75);
+      --bg-card-hover: rgba(30, 41, 67, 0.9);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(99, 102, 241, 0.5);
+      --primary: #6366f1;
+      --primary-gradient: linear-gradient(135deg, #6366f1 0%, #3b82f6 100%);
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-sky: #0ea5e9;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+      --shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.4);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.12) 0px, transparent 50%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 74px; /* отступ под нижний навбар */
+    }
+
+    /* Верхняя шапка */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: rgba(9, 13, 22, 0.85);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--primary-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    }
+
+    .brand-title {
+      font-weight: 800;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .user-pill {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-color);
+      padding: 6px 12px;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .user-pill:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .user-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-emerald);
+      box-shadow: 0 0 8px var(--accent-emerald);
+    }
+
+    /* Основной контейнер */
+    main {
+      flex: 1;
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Поиск и фильтры */
+    .search-box {
+      position: relative;
+      margin-bottom: 14px;
+    }
+
+    .search-input {
+      width: 100%;
+      background: rgba(22, 30, 49, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 12px 16px 12px 42px;
+      color: var(--text-main);
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+      background: rgba(22, 30, 49, 0.9);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 1.1rem;
+    }
+
+    /* Горизонтальный скролл чипсов/фильтров */
+    .filter-scroll {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 14px;
+      scrollbar-width: none;
+    }
+
+    .filter-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chip {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s;
+      user-select: none;
+    }
+
+    .chip.active {
+      background: var(--primary-gradient);
+      color: #ffffff;
+      border-color: transparent;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+    }
+
+    /* Карточки олимпиад */
+    .olympiads-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .olymp-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .olymp-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(255, 255, 255, 0.16);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.35;
+      color: #ffffff;
+    }
+
+    .card-organizer {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .badges-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .badge-level-1 { background: rgba(16, 185, 129, 0.18); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-level-2 { background: rgba(245, 158, 11, 0.18); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-level-3 { background: rgba(14, 165, 233, 0.18); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); }
+    .badge-vsosh { background: rgba(168, 85, 247, 0.18); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+    .badge-demo { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); animation: pulse 2s infinite; }
+    .badge-neutral { background: rgba(255, 255, 255, 0.07); color: var(--text-muted); }
+    .badge-benefit { background: rgba(99, 102, 241, 0.15); color: #a5b4fc; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.65; }
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--border-color);
+      padding-top: 12px;
+      margin-top: 4px;
+    }
+
+    .card-deadline {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .card-deadline.urgent {
+      color: var(--accent-rose);
+      font-weight: 600;
+    }
+
+    .btn-sub {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-sub:hover {
+      background: var(--primary);
+      border-color: transparent;
+      color: #ffffff;
+    }
+
+    .btn-sub.subscribed {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: var(--accent-emerald);
+    }
+
+    .btn-sub.subscribed:hover {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.4);
+      color: var(--accent-rose);
+    }
+
+    /* Модальное окно деталей */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .modal-backdrop.active {
+      display: flex;
+    }
+
+    .modal-card {
+      background: #111827;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      max-width: 580px;
+      width: 100%;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    }
+
+    .modal-header {
+      padding: 20px 20px 14px 20px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .modal-close {
+      background: rgba(255, 255, 255, 0.08);
+      border: none;
+      color: var(--text-muted);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      transition: all 0.2s;
+    }
+
+    .modal-close:hover {
+      background: rgba(255, 255, 255, 0.16);
+      color: #ffffff;
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .timeline-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .stage-item {
+      position: relative;
+      padding-left: 26px;
+      padding-bottom: 16px;
+      border-left: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .stage-item:last-child {
+      border-left: 2px solid transparent;
+      padding-bottom: 0;
+    }
+
+    .stage-dot {
+      position: absolute;
+      left: -7px;
+      top: 2px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--primary);
+      border: 2px solid #111827;
+    }
+
+    .stage-item.registration .stage-dot { background: var(--accent-emerald); }
+    .stage-item.final .stage-dot { background: var(--accent-amber); }
+
+    .stage-name {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 3px;
+    }
+
+    .stage-dates {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .modal-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-primary {
+      background: var(--primary-gradient);
+      color: #ffffff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    /* Экран настроек / Профиль */
+    .settings-group {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .settings-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .grid-grades {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .grade-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 12px 6px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .grade-btn.active {
+      background: var(--primary-gradient);
+      border-color: transparent;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+    }
+
+    .subjects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 8px;
+    }
+
+    .subject-toggle {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s;
+      user-select: none;
+    }
+
+    .subject-toggle.active {
+      background: rgba(99, 102, 241, 0.2);
+      border-color: var(--primary);
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .select-custom {
+      width: 100%;
+      background: rgba(22, 30, 49, 0.8);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      color: var(--text-main);
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .select-custom option {
+      background: #111827;
+      color: #ffffff;
+    }
+
+    /* Нижний навигационный бар */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background: rgba(9, 13, 22, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      z-index: 50;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.72rem;
+      font-weight: 500;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      transition: all 0.2s;
+    }
+
+    .nav-item .icon {
+      font-size: 1.25rem;
+      transition: transform 0.2s;
+    }
+
+    .nav-item.active {
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .nav-item.active .icon {
+      transform: translateY(-2px);
+    }
+
+    .nav-item.active::after {
+      content: '';
+      width: 4px;
+      height: 4px;
+      background: var(--primary);
+      border-radius: 50%;
+      box-shadow: 0 0 6px var(--primary);
+    }
+
+    /* Всплывающее уведомление (Toast) */
+    .toast {
+      position: fixed;
+      top: 68px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: rgba(17, 24, 39, 0.95);
+      border: 1px solid var(--border-color);
+      backdrop-filter: blur(12px);
+      color: #ffffff;
+      padding: 10px 18px;
+      border-radius: 9999px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* Пустое состояние */
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-icon {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+      display: inline-block;
+    }
+
+    .empty-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 6px;
+    }
+
+    /* Переключатель пользователя */
+    .modal-user-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      color: #ffffff;
+      font-size: 0.9rem;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Верхняя панель -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">🏆</div>
+      <div class="brand-title">Олимпиадный навигатор</div>
+    </div>
+    <div class="user-pill" id="userPillBtn" title="Нажмите для смены профиля">
+      <div class="user-dot"></div>
+      <span id="userPillText">Профиль</span>
+    </div>
+  </header>
+
+  <!-- Основной контент по вкладкам -->
+  <main>
+
+    <!-- ВКЛАДКА 1: ПЕРСОНАЛЬНАЯ ПОДБОРКА -->
+    <section id="tab-recommendations" class="tab-content active">
+      <div style="margin-bottom: 14px;">
+        <h2 style="font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em;">🎯 Персональная подборка</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Олимпиады, подобранные алгоритмом под твой класс и предметы</p>
+      </div>
+
+      <div id="recList" class="olympiads-list">
+        <!-- Заполняется JS -->
+      </div>
+    </section>
+
+    <!-- ВКЛАДКА 2: КАТАЛОГ ОЛИМПИАД -->
+    <section id="tab-catalog" class="tab-content">
+      <!-- Поиск -->
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" class="search-input" placeholder="Поиск по названию или вузу...">
+      </div>
+
+      <!-- Фильтр по предметам -->
+      <div class="filter-scroll" id="subjectFilterRow">
+        <div class="chip active" data-subject="">Все предметы</div>
+        <div class="chip" data-subject="informatics">💻 Информатика</div>
+        <div class="chip" data-subject="math">📐 Математика</div>
+        <div class="chip" data-subject="physics">⚡ Физика</div>
+        <div class="chip" data-subject="chemistry">🧪 Химия</div>
+        <div class="chip" data-subject="biology">🌿 Биология</div>
+        <div class="chip" data-subject="social_studies">🏛 Общество</div>
+        <div class="chip" data-subject="economics">📈 Экономика</div>
+        <div class="chip" data-subject="literature">📚 Литература</div>
+      </div>
+
+      <!-- Фильтр по уровням и классам -->
+      <div class="filter-scroll" id="levelFilterRow">
+        <div class="chip active" data-level="">Любой уровень</div>
+        <div class="chip" data-level="1">🥇 I уровень</div>
+        <div class="chip" data-level="2">🥈 II уровень</div>
+        <div class="chip" data-level="3">🥉 III уровень</div>
+      </div>
+
+      <!-- Список олимпиад каталога -->
+      <div id="catalogList" class="olympiads-list">
+        <!-- Заполняется JS -->
+      </div>
+    </section>
+
+    <!-- ВКЛАДКА 3: МОИ ДЕДЛАЙНЫ И ПОДПИСКИ -->
+    <section id="tab-subscriptions" class="tab-content">
+      <div style="margin-bottom: 14px;">
+        <h2 style="font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em;">📅 Мои дедлайны</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Отслеживание туров, регистраций и напоминаний</p>
+      </div>
+
+      <div class="filter-scroll" id="subFilterRow">
+        <div class="chip active" data-sub-filter="all">Все подписки</div>
+        <div class="chip" data-sub-filter="interested">⏳ В планах</div>
+        <div class="chip" data-sub-filter="registered">✅ Зарегистрирован</div>
+      </div>
+
+      <div id="subsList" class="olympiads-list">
+        <!-- Заполняется JS -->
+      </div>
+    </section>
+
+    <!-- ВКЛАДКА 4: ПРОФИЛЬ И НАСТРОЙКИ -->
+    <section id="tab-profile" class="tab-content">
+      <div style="margin-bottom: 16px;">
+        <h2 style="font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em;">⚙️ Настройки профиля</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Влияют на персональные рекомендации и время уведомлений</p>
+      </div>
+
+      <!-- Класс обучения -->
+      <div class="settings-group">
+        <div class="settings-title">🎓 Твой класс</div>
+        <div class="grid-grades" id="gradeSelector">
+          <button class="grade-btn" data-grade="8">8 класс</button>
+          <button class="grade-btn" data-grade="9">9 класс</button>
+          <button class="grade-btn" data-grade="10">10 класс</button>
+          <button class="grade-btn" data-grade="11">11 класс</button>
+        </div>
+      </div>
+
+      <!-- Интересующие предметы -->
+      <div class="settings-group">
+        <div class="settings-title">📚 Интересующие предметы</div>
+        <div class="subjects-grid" id="subjectsSelector">
+          <!-- Заполняется JS -->
+        </div>
+      </div>
+
+      <!-- Регион проживания -->
+      <div class="settings-group">
+        <div class="settings-title">📍 Регион (для очных площадок)</div>
+        <select class="select-custom" id="regionSelect">
+          <option value="all">Вся Россия / Другой регион</option>
+          <option value="77">Москва</option>
+          <option value="78">Санкт-Петербург</option>
+          <option value="16">Республика Татарстан</option>
+          <option value="66">Свердловская область</option>
+        </select>
+      </div>
+
+      <!-- Тихие часы -->
+      <div class="settings-group">
+        <div class="settings-title">⏰ Тихие часы (без ночных уведомлений)</div>
+        <select class="select-custom" id="quietSelect">
+          <option value="22:00-08:00">🌙 22:00 – 08:00 (рекомендуется)</option>
+          <option value="23:00-09:00">🌙 23:00 – 09:00</option>
+          <option value="21:00-09:00">🌙 21:00 – 09:00</option>
+          <option value="none">🔔 Круглосуточно (без ограничений)</option>
+        </select>
+      </div>
+
+      <button id="saveProfileBtn" class="btn-primary" style="width: 100%; justify-content: center; padding: 14px;">
+        💾 Сохранить изменения
+      </button>
+    </section>
+
+  </main>
+
+  <!-- Нижний навигационный бар -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-tab="recommendations" id="navRecBtn">
+      <span class="icon">🎯</span>
+      <span>Подборка</span>
+    </button>
+    <button class="nav-item" data-tab="catalog" id="navCatBtn">
+      <span class="icon">🔍</span>
+      <span>Каталог</span>
+    </button>
+    <button class="nav-item" data-tab="subscriptions" id="navSubsBtn">
+      <span class="icon">📅</span>
+      <span>Дедлайны</span>
+    </button>
+    <button class="nav-item" data-tab="profile" id="navProfBtn">
+      <span class="icon">⚙️</span>
+      <span>Профиль</span>
+    </button>
+  </nav>
+
+  <!-- Модальное окно деталей олимпиады -->
+  <div class="modal-backdrop" id="olympModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <div id="modalBadges" class="badges-row"></div>
+          <h3 id="modalTitle" style="font-size: 1.15rem; font-weight: 700; color: #ffffff;"></h3>
+          <div id="modalOrganizer" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;"></div>
+        </div>
+        <button class="modal-close" id="modalCloseBtn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="modalBenefitsBox" style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-sm); padding: 12px;">
+          <div style="font-size: 0.8rem; font-weight: 700; color: #a5b4fc; margin-bottom: 2px;">🎁 ЛЬГОТЫ ПРИ ПОСТУПЛЕНИИ</div>
+          <div id="modalBenefits" style="font-size: 0.88rem; color: #ffffff;"></div>
+        </div>
+
+        <div>
+          <div class="timeline-title">Этапы олимпиады и дедлайны</div>
+          <div id="modalStagesTimeline"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <a id="modalSiteLink" href="#" target="_blank" class="btn-secondary">
+          🌐 На сайт
+        </a>
+        <button id="modalSubBtn" class="btn-primary">
+          🔔 Подписаться
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно выбора профиля пользователя -->
+  <div class="modal-backdrop" id="userSwitchModal">
+    <div class="modal-card" style="max-width: 420px;">
+      <div class="modal-header">
+        <h3 style="font-size: 1.1rem; font-weight: 700;">👤 Активный профиль</h3>
+        <button class="modal-close" id="userSwitchCloseBtn">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.85rem; color: var(--text-muted);">
+          В Telegram WebApp ваш ID определяется автоматически. В браузере вы можете переключаться между пользователями или ввести свой Telegram ID:
+        </p>
+        <div>
+          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">ID пользователя:</label>
+          <input type="text" id="customUserIdInput" class="modal-user-input" placeholder="Например: 1 или ваш Telegram ID">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="applyUserIdBtn" class="btn-primary" style="width: 100%; justify-content: center;">
+          Применить
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Всплывающий тост -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // --- СПРАВОЧНИКИ ---
+    const SUBJECT_MAP = {
+      informatics: '💻 Информатика',
+      math: '📐 Математика',
+      physics: '⚡ Физика',
+      chemistry: '🧪 Химия',
+      biology: '🌿 Биология',
+      literature: '📚 Литература',
+      social_studies: '🏛 Обществознание',
+      economics: '📈 Экономика'
+    };
+
+    const REGION_MAP = {
+      '77': 'Москва',
+      '78': 'Санкт-Петербург',
+      '16': 'Республика Татарстан',
+      '66': 'Свердловская область',
+      'all': 'Вся Россия'
+    };
+
+    // --- СОСТОЯНИЕ ПРИЛОЖЕНИЯ ---
+    let currentUserId = '1';
+    let initData = '';
+    let currentUserProfile = null;
+    let userSubscriptions = new Map(); // olympiadId -> sub object
+    let currentModalOlympiad = null;
+    let catalogFilters = { subject: '', level: '', search: '' };
+    let subFilter = 'all';
+
+    // --- ИНИЦИАЛИЗАЦИЯ ТЕЛЕГРАМ / СРЕДЫ ---
+    (function initEnvironment() {
+      // 1. Проверяем Telegram WebApp
+      if (window.Telegram?.WebApp) {
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+        if (tg.initData) {
+          initData = tg.initData;
+        }
+        if (tg.initDataUnsafe?.user?.id) {
+          currentUserId = String(tg.initDataUnsafe.user.id);
+        }
+      }
+
+      // 2. Проверяем параметры URL (?user_id=...)
+      const urlParams = new URLSearchParams(window.location.search);
+      const qUserId = urlParams.get('user_id');
+      if (qUserId) {
+        currentUserId = qUserId;
+        localStorage.setItem('olymp_user_id', qUserId);
+      } else {
+        const savedId = localStorage.getItem('olymp_user_id');
+        if (savedId) currentUserId = savedId;
+      }
+    })();
+
+    // --- API КЛИЕНТ ---
+    async function apiRequest(path, options = {}) {
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(options.headers || {})
+      };
+
+      if (initData) {
+        headers['x-init-data'] = initData;
+      }
+      if (currentUserId) {
+        headers['x-user-id'] = currentUserId;
+      }
+
+      const res = await fetch(path, { ...options, headers });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(err.message || 'Ошибка запроса');
+      }
+      return res.json();
+    }
+
+    // --- ВСПЛЫВАЮЩИЙ ТОСТ ---
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2500);
+    }
+
+    // --- ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ---
+    document.querySelectorAll('.nav-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        btn.classList.add('active');
+        const tabId = btn.dataset.tab;
+        document.getElementById(`tab-${tabId}`).classList.add('active');
+
+        if (tabId === 'recommendations') loadRecommendations();
+        if (tabId === 'catalog') loadCatalog();
+        if (tabId === 'subscriptions') loadSubscriptions();
+        if (tabId === 'profile') loadProfile();
+      });
+    });
+
+    // --- ЗАГРУЗКА ДАННЫХ ПРОФИЛЯ ---
+    async function loadProfile() {
+      try {
+        const profile = await apiRequest('/api/me');
+        currentUserProfile = profile;
+
+        // Обновляем бейдж в шапке
+        const gradeStr = profile.grade ? `${profile.grade} класс` : 'Класс не указан';
+        const regionStr = REGION_MAP[profile.region_code] || 'Вся Россия';
+        document.getElementById('userPillText').textContent = `${gradeStr} • ${regionStr}`;
+
+        // Заполняем настройки
+        renderGradeSelector(profile.grade);
+        renderSubjectsSelector(profile.subjects || []);
+        document.getElementById('regionSelect').value = profile.region_code || 'all';
+
+        const quietVal = (profile.quiet_from === profile.quiet_to || (!profile.quiet_from && !profile.quiet_to))
+          ? 'none'
+          : `${profile.quiet_from}-${profile.quiet_to}`;
+        document.getElementById('quietSelect').value = quietVal;
+      } catch (err) {
+        console.error('Ошибка загрузки профиля:', err);
+      }
+    }
+
+    function renderGradeSelector(selectedGrade) {
+      const container = document.getElementById('gradeSelector');
+      container.querySelectorAll('.grade-btn').forEach(btn => {
+        const g = parseInt(btn.dataset.grade, 10);
+        btn.classList.toggle('active', g === selectedGrade);
+      });
+    }
+
+    function renderSubjectsSelector(selectedSubjects) {
+      const container = document.getElementById('subjectsSelector');
+      container.innerHTML = '';
+      const set = new Set(selectedSubjects);
+
+      for (const [code, title] of Object.entries(SUBJECT_MAP)) {
+        const div = document.createElement('div');
+        div.className = `subject-toggle ${set.has(code) ? 'active' : ''}`;
+        div.dataset.code = code;
+        div.innerHTML = `<span>${title}</span><span>${set.has(code) ? '✓' : '+'}</span>`;
+        div.onclick = () => {
+          div.classList.toggle('active');
+          div.querySelector('span:last-child').textContent = div.classList.contains('active') ? '✓' : '+';
+        };
+        container.appendChild(div);
+      }
+    }
+
+    // Сохранение настроек профиля
+    document.getElementById('saveProfileBtn').addEventListener('click', async () => {
+      const activeGradeBtn = document.querySelector('#gradeSelector .grade-btn.active');
+      const grade = activeGradeBtn ? parseInt(activeGradeBtn.dataset.grade, 10) : 10;
+
+      const activeSubjectToggles = document.querySelectorAll('#subjectsSelector .subject-toggle.active');
+      const subjects = Array.from(activeSubjectToggles).map(t => t.dataset.code);
+
+      const region = document.getElementById('regionSelect').value;
+      const quietVal = document.getElementById('quietSelect').value;
+
+      let quiet_from = '22:00';
+      let quiet_to = '08:00';
+      if (quietVal === 'none') {
+        quiet_from = '00:00';
+        quiet_to = '00:00';
+      } else {
+        const parts = quietVal.split('-');
+        quiet_from = parts[0];
+        quiet_to = parts[1];
+      }
+
+      try {
+        await apiRequest('/api/me', {
+          method: 'PUT',
+          body: JSON.stringify({
+            grade,
+            subjects,
+            region_code: region === 'all' ? null : region,
+            quiet_from,
+            quiet_to
+          })
+        });
+        showToast('✅ Профиль успешно сохранен!');
+        await loadProfile();
+      } catch (err) {
+        showToast('❌ Ошибка сохранения: ' + err.message);
+      }
+    });
+
+    document.querySelectorAll('#gradeSelector .grade-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#gradeSelector .grade-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+
+    // --- КЭШ ПОДПИСОК ---
+    async function syncSubscriptions() {
+      try {
+        const subs = await apiRequest('/api/me/subscriptions');
+        userSubscriptions.clear();
+        for (const s of subs) {
+          userSubscriptions.set(s.olympiad_id, s);
+        }
+      } catch (err) {
+        console.error('Ошибка синхронизации подписок:', err);
+      }
+    }
+
+    // --- РЕНДЕРИНГ КАРТОЧКИ ОЛИМПИАДЫ ---
+    function createOlympiadCard(item) {
+      const isSub = userSubscriptions.has(item.id);
+      const sub = userSubscriptions.get(item.id);
+
+      const card = document.createElement('div');
+      card.className = 'olymp-card';
+
+      // Уровень РСОШ бейдж
+      let levelBadge = '';
+      if (item.rsosh_level === 1) levelBadge = '<span class="badge badge-level-1">🥇 I уровень РСОШ</span>';
+      else if (item.rsosh_level === 2) levelBadge = '<span class="badge badge-level-2">🥈 II уровень РСОШ</span>';
+      else if (item.rsosh_level === 3) levelBadge = '<span class="badge badge-level-3">🥉 III уровень РСОШ</span>';
+      else levelBadge = '<span class="badge badge-vsosh">🏛 ВсОШ / Гос. перечень</span>';
+
+      const demoBadge = item.is_demo ? '<span class="badge badge-demo">⚡ ДЕМО ДЛЯ ЖЮРИ</span>' : '';
+      const gradesBadge = `<span class="badge badge-neutral">${item.grade_from}–${item.grade_to} классы</span>`;
+      const benefitsBadge = item.benefits_note ? `<span class="badge badge-benefit">🎁 ${item.benefits_note}</span>` : '';
+
+      // Предметы
+      const subjectsList = (item.subjects || []).map(s => SUBJECT_MAP[s] || s).join(', ');
+
+      card.innerHTML = `
+        <div class="card-top">
+          <div class="card-title">${item.title}</div>
+        </div>
+        <div class="card-organizer">🏢 ${item.organizer}</div>
+        <div class="badges-row">
+          ${demoBadge}
+          ${levelBadge}
+          ${gradesBadge}
+          ${benefitsBadge}
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;">
+          📚 ${subjectsList}
+        </div>
+        <div class="card-footer">
+          <div class="card-deadline">
+            <span>📅</span>
+            <span>Дедлайны этапов</span>
+          </div>
+          <button class="btn-sub ${isSub ? 'subscribed' : ''}" data-id="${item.id}">
+            ${isSub ? '✓ Вы подписаны' : '🔔 Подписаться'}
+          </button>
+        </div>
+      `;
+
+      // Клик по карточке открывает детали
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.btn-sub')) return;
+        openOlympiadDetails(item.id);
+      });
+
+      // Кнопка подписки
+      const subBtn = card.querySelector('.btn-sub');
+      subBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        await toggleSubscription(item.id, subBtn);
+      });
+
+      return card;
+    }
+
+    // --- ПЕРЕКЛЮЧЕНИЕ ПОДПИСКИ ---
+    async function toggleSubscription(olympiadId, btnElement) {
+      const isSub = userSubscriptions.has(olympiadId);
+
+      try {
+        if (!isSub) {
+          await apiRequest('/api/me/subscriptions', {
+            method: 'POST',
+            body: JSON.stringify({ olympiad_id: olympiadId })
+          });
+          showToast('🔔 Вы подписались на олимпиаду! Напоминания созданы.');
+        } else {
+          const sub = userSubscriptions.get(olympiadId);
+          await apiRequest(`/api/me/subscriptions/${sub.id}`, {
+            method: 'DELETE'
+          });
+          showToast('🔕 Подписка отменена');
+        }
+
+        await syncSubscriptions();
+
+        // Обновляем кнопку
+        const updatedSub = userSubscriptions.has(olympiadId);
+        if (btnElement) {
+          btnElement.className = `btn-sub ${updatedSub ? 'subscribed' : ''}`;
+          btnElement.textContent = updatedSub ? '✓ Вы подписаны' : '🔔 Подписаться';
+        }
+        if (currentModalOlympiad && currentModalOlympiad.id === olympiadId) {
+          const modalBtn = document.getElementById('modalSubBtn');
+          modalBtn.textContent = updatedSub ? '✓ Вы подписаны (отписаться)' : '🔔 Подписаться на напоминания';
+        }
+
+        // Если активна вкладка дедлайнов — перерисовываем
+        if (document.getElementById('tab-subscriptions').classList.contains('active')) {
+          loadSubscriptions();
+        }
+      } catch (err) {
+        showToast('❌ Ошибка: ' + err.message);
+      }
+    }
+
+    // --- ВКЛАДКА 1: ЗАГРУЗКА РЕКОМЕНДАЦИЙ ---
+    async function loadRecommendations() {
+      const container = document.getElementById('recList');
+      container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted);">Загрузка персональной подборки...</div>';
+
+      await syncSubscriptions();
+      try {
+        const list = await apiRequest('/api/recommendations');
+        container.innerHTML = '';
+
+        if (!list || list.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">🎯</div>
+              <div class="empty-title">Нет олимпиад под текущие фильтры</div>
+              <p>Попробуйте выбрать больше предметов или изменить класс в профиле.</p>
+            </div>
+          `;
+          return;
+        }
+
+        for (const item of list) {
+          container.appendChild(createOlympiadCard(item));
+        }
+      } catch (err) {
+        container.innerHTML = `<div style="color:var(--accent-rose); padding:20px;">Ошибка: ${err.message}</div>`;
+      }
+    }
+
+    // --- ВКЛАДКА 2: КАТАЛОГ ---
+    async function loadCatalog() {
+      const container = document.getElementById('catalogList');
+      container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted);">Загрузка каталога...</div>';
+
+      await syncSubscriptions();
+
+      const params = new URLSearchParams();
+      if (catalogFilters.subject) params.set('subject', catalogFilters.subject);
+      if (catalogFilters.level) params.set('level', catalogFilters.level);
+      if (catalogFilters.search) params.set('search', catalogFilters.search);
+
+      try {
+        const list = await apiRequest(`/api/olympiads?${params.toString()}`);
+        container.innerHTML = '';
+
+        if (!list || list.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">🔍</div>
+              <div class="empty-title">Ничего не найдено</div>
+              <p>Попробуйте изменить поисковый запрос или сбросить фильтры.</p>
+            </div>
+          `;
+          return;
+        }
+
+        for (const item of list) {
+          container.appendChild(createOlympiadCard(item));
+        }
+      } catch (err) {
+        container.innerHTML = `<div style="color:var(--accent-rose); padding:20px;">Ошибка: ${err.message}</div>`;
+      }
+    }
+
+    // Слушатели поиска и фильтров каталога
+    let searchDebounceTimer = null;
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        catalogFilters.search = e.target.value.trim();
+        loadCatalog();
+      }, 300);
+    });
+
+    document.querySelectorAll('#subjectFilterRow .chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#subjectFilterRow .chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        catalogFilters.subject = chip.dataset.subject || '';
+        loadCatalog();
+      });
+    });
+
+    document.querySelectorAll('#levelFilterRow .chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#levelFilterRow .chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        catalogFilters.level = chip.dataset.level || '';
+        loadCatalog();
+      });
+    });
+
+    // --- ВКЛАДКА 3: ДЕДЛАЙНЫ И ПОДПИСКИ ---
+    async function loadSubscriptions() {
+      const container = document.getElementById('subsList');
+      container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted);">Загрузка подписок...</div>';
+
+      try {
+        const subs = await apiRequest('/api/me/subscriptions');
+        userSubscriptions.clear();
+        for (const s of subs) {
+          userSubscriptions.set(s.olympiad_id, s);
+        }
+
+        container.innerHTML = '';
+
+        let filtered = subs;
+        if (subFilter !== 'all') {
+          filtered = subs.filter(s => s.status === subFilter);
+        }
+
+        if (filtered.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">📅</div>
+              <div class="empty-title">Нет подписок в этом разделе</div>
+              <p>Перейдите в раздел «Каталог» или «Подборка», чтобы подписаться на олимпиады.</p>
+            </div>
+          `;
+          return;
+        }
+
+        for (const item of filtered) {
+          const card = document.createElement('div');
+          card.className = 'olymp-card';
+
+          const statusBadge = item.status === 'registered'
+            ? '<span class="badge" style="background:rgba(16,185,129,0.2); color:#34d399;">✅ Зарегистрирован</span>'
+            : '<span class="badge" style="background:rgba(245,158,11,0.2); color:#fbbf24;">⏳ В планах</span>';
+
+          let nextText = 'Дедлайны уточняются';
+          if (item.next_deadline) {
+            const d = new Date(item.next_deadline.date);
+            nextText = `Ближайшее напоминание: ${d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })} (${item.next_deadline.stage_name})`;
+          }
+
+          card.innerHTML = `
+            <div class="card-top">
+              <div class="card-title">${item.title}</div>
+              <div>${statusBadge}</div>
+            </div>
+            <div class="card-organizer">🏢 ${item.organizer}</div>
+            <div style="font-size: 0.82rem; color: var(--accent-rose); font-weight: 500; margin-bottom: 12px;">
+              ⏰ ${nextText}
+            </div>
+            <div class="card-footer">
+              <button class="btn-secondary" style="font-size: 0.8rem; padding: 6px 12px;" data-action="toggle-status">
+                ${item.status === 'registered' ? 'Вернуть «В планах»' : '✓ Я зарегистрировался'}
+              </button>
+              <button class="btn-sub subscribed" style="font-size: 0.8rem;" data-action="unsub">
+                Отписаться
+              </button>
+            </div>
+          `;
+
+          card.querySelector('[data-action="toggle-status"]').onclick = async (e) => {
+            e.stopPropagation();
+            const newStatus = item.status === 'registered' ? 'interested' : 'registered';
+            await apiRequest(`/api/me/subscriptions/${item.id}`, {
+              method: 'PATCH',
+              body: JSON.stringify({ status: newStatus })
+            });
+            showToast(newStatus === 'registered' ? '🎉 Поздравляем с регистрацией!' : 'Статус изменен на «В планах»');
+            loadSubscriptions();
+          };
+
+          card.querySelector('[data-action="unsub"]').onclick = async (e) => {
+            e.stopPropagation();
+            await apiRequest(`/api/me/subscriptions/${item.id}`, { method: 'DELETE' });
+            showToast('🔕 Подписка отменена');
+            loadSubscriptions();
+          };
+
+          card.onclick = () => openOlympiadDetails(item.olympiad_id);
+
+          container.appendChild(card);
+        }
+      } catch (err) {
+        container.innerHTML = `<div style="color:var(--accent-rose); padding:20px;">Ошибка: ${err.message}</div>`;
+      }
+    }
+
+    document.querySelectorAll('#subFilterRow .chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#subFilterRow .chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        subFilter = chip.dataset.subFilter;
+        loadSubscriptions();
+      });
+    });
+
+    // --- МОДАЛЬНОЕ ОКНО ДЕТАЛЕЙ ОЛИМПИАДЫ ---
+    async function openOlympiadDetails(olympiadId) {
+      const modal = document.getElementById('olympModal');
+      modal.classList.add('active');
+
+      document.getElementById('modalTitle').textContent = 'Загрузка...';
+      document.getElementById('modalOrganizer').textContent = '';
+      document.getElementById('modalBadges').innerHTML = '';
+      document.getElementById('modalStagesTimeline').innerHTML = 'Загрузка этапов...';
+
+      try {
+        const item = await apiRequest(`/api/olympiads/${olympiadId}`);
+        currentModalOlympiad = item;
+
+        document.getElementById('modalTitle').textContent = item.title;
+        document.getElementById('modalOrganizer').textContent = `🏢 Организатор: ${item.organizer}`;
+        document.getElementById('modalBenefits').textContent = item.benefits_note || 'Льготы БВИ или 100 баллов по профильному предмету.';
+
+        // Ссылка
+        const siteLink = document.getElementById('modalSiteLink');
+        siteLink.href = item.url;
+
+        // Бейджи
+        let levelBadge = '';
+        if (item.rsosh_level === 1) levelBadge = '<span class="badge badge-level-1">🥇 I уровень РСОШ</span>';
+        else if (item.rsosh_level === 2) levelBadge = '<span class="badge badge-level-2">🥈 II уровень РСОШ</span>';
+        else if (item.rsosh_level === 3) levelBadge = '<span class="badge badge-level-3">🥉 III уровень РСОШ</span>';
+        else levelBadge = '<span class="badge badge-vsosh">🏛 ВсОШ</span>';
+
+        const demoBadge = item.is_demo ? '<span class="badge badge-demo">⚡ ДЕМО ДЛЯ ЖЮРИ</span>' : '';
+        document.getElementById('modalBadges').innerHTML = `${demoBadge}${levelBadge}<span class="badge badge-neutral">${item.grade_from}–${item.grade_to} кл.</span>`;
+
+        // Кнопка подписки в модалке
+        const isSub = userSubscriptions.has(item.id);
+        const subBtn = document.getElementById('modalSubBtn');
+        subBtn.textContent = isSub ? '✓ Вы подписаны (отписаться)' : '🔔 Подписаться на напоминания';
+        subBtn.onclick = async () => {
+          await toggleSubscription(item.id);
+        };
+
+        // Этапы
+        const stagesContainer = document.getElementById('modalStagesTimeline');
+        stagesContainer.innerHTML = '';
+
+        if (!item.stages || item.stages.length === 0) {
+          stagesContainer.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem;">Даты этапов будут объявлены организатором позже.</div>';
+        } else {
+          for (const st of item.stages) {
+            const startD = new Date(st.starts_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+            const endD = new Date(st.ends_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+            const formatStr = st.format === 'online' ? '🌐 Онлайн' : (st.format === 'offline' ? '🏛 Очно' : 'Смешанный');
+
+            const div = document.createElement('div');
+            div.className = `stage-item ${st.kind}`;
+            div.innerHTML = `
+              <div class="stage-dot"></div>
+              <div class="stage-name">${st.name}</div>
+              <div class="stage-dates">📅 ${startD} – ${endD} • ${formatStr}</div>
+            `;
+            stagesContainer.appendChild(div);
+          }
+        }
+      } catch (err) {
+        document.getElementById('modalTitle').textContent = 'Ошибка загрузки';
+        document.getElementById('modalStagesTimeline').innerHTML = err.message;
+      }
+    }
+
+    document.getElementById('modalCloseBtn').onclick = () => {
+      document.getElementById('olympModal').classList.remove('active');
+    };
+    document.getElementById('olympModal').onclick = (e) => {
+      if (e.target.id === 'olympModal') document.getElementById('olympModal').classList.remove('active');
+    };
+
+    // --- МОДАЛЬНОЕ ОКНО СМЕНЫ ПОЛЬЗОВАТЕЛЯ ---
+    document.getElementById('userPillBtn').onclick = () => {
+      document.getElementById('customUserIdInput').value = currentUserId;
+      document.getElementById('userSwitchModal').classList.add('active');
+    };
+    document.getElementById('userSwitchCloseBtn').onclick = () => {
+      document.getElementById('userSwitchModal').classList.remove('active');
+    };
+    document.getElementById('userSwitchModal').onclick = (e) => {
+      if (e.target.id === 'userSwitchModal') document.getElementById('userSwitchModal').classList.remove('active');
+    };
+    document.getElementById('applyUserIdBtn').onclick = () => {
+      const val = document.getElementById('customUserIdInput').value.trim();
+      if (val) {
+        currentUserId = val;
+        localStorage.setItem('olymp_user_id', val);
+        document.getElementById('userSwitchModal').classList.remove('active');
+        showToast(`👤 Активный профиль: ${currentUserId}`);
+        loadProfile();
+        loadRecommendations();
+      }
+    };
+
+    // --- СТАРТ ПРИЛОЖЕНИЯ ---
+    (async function start() {
+      await loadProfile();
+      await loadRecommendations();
+    })();
+  </script>
+</body>
+</html>

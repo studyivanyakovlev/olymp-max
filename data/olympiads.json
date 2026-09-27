@@ -1,0 +1,423 @@
+[
+  {
+    "id": "vysshaya-proba",
+    "title": "Всероссийская олимпиада школьников «Высшая проба»",
+    "organizer": "НИУ ВШЭ (Высшая школа экономики)",
+    "rsosh_level": 1,
+    "subjects": ["informatics", "math", "physics", "economics", "social_studies"],
+    "grade_from": 7,
+    "grade_to": 11,
+    "benefits_note": "БВИ (поступление без вступительных испытаний) на бюджет в ведущие вузы России или 100 баллов за профильный ЕГЭ",
+    "url": "https://olymp.hse.ru/mmo",
+    "source_url": "https://olymp.hse.ru/mmo/regulations",
+    "verified_at": "2026-09-25T14:30:00+03:00",
+    "is_demo": false,
+    "stages": [
+      {
+        "id": "vp-reg",
+        "kind": "registration",
+        "name": "Регистрация участников",
+        "starts_at": "2026-10-01T09:00:00+03:00",
+        "ends_at": "2026-11-06T23:59:00+03:00",
+        "region_code": null,
+        "format": "online"
+      },
+      {
+        "id": "vp-qualifying",
+        "kind": "qualifying",
+        "name": "Первый (отборочный) онлайн-этап",
+        "starts_at": "2026-11-10T10:00:00+03:00",
+        "ends_at": "2026-11-25T20:00:00+03:00",
+        "region_code": null,
+        "format": "online"
+      },
+      {
+        "id": "vp-final",
+        "kind": "final",
+        "name": "Заключительный очный этап",
+        "starts_at": "2027-02-05T10:00:00+03:00",
+        "ends_at": "2027-02-18T18:00:00+03:00",
+        "region_code": null,
+        "format": "offline"
+      }
+    ]
+  },
+  {
+    "id": "lomonosov",
+    "title": "Олимпиада школьников «Ломоносов»",
+    "organizer": "Московский государственный университет имени М.В. Ломоносова",
+    "rsosh_level": 1,
+    "subjects": ["math", "physics", "informatics", "chemistry", "biology", "literature"],
+    "grade_from": 8,
+    "grade_to": 11,
+    "benefits_note": "БВИ в МГУ и другие вузы РФ при дипломе 1-й степени, 100 баллов по предмету",
+    "url": "https://olymp.msu.ru",
+    "source_url": "https://olymp.msu.ru/rus/page/regulation",
+    "verified_at": "2026-09-24T18:00:00+03:00",
+    "is_demo": false,
+    "stages": [
+      {
+        "id": "lomonosov-reg",
+        "kind": "registration",
+        "name": "Регистрация на отборочный этап",
+        "starts_at": "2026-10-15T12:00:00+03:00",
+        "ends_at": "2026-11-20T12:00:00+03:00",
+        "region_code": null,
+        "format": "online"
+      },
+      {
+        "id": "lomonosov-qualifying",
+        "kind": "qualifying",
+        "name": "Отборочный интернет-тур",
+        "starts_at": "2026-11-21T12:00:00+03:00",
+        "ends_at": "2026-12-05T12:00:00+03:00",
+        "region_code": null,
+        "format": "online"
+      },
+      {
+        "id": "lomonosov-final",
+        "kind": "final",
+        "name": "Заключительный этап",
+        "starts_at": "2027-02-15T10:00:00+03:00",
+        "ends_at": "2027-03-10T18:00:00+03:00",
+        "region_code": null,
+        "format": "offline"
+      }
+    ]
+  },
+  {
+    "id": "phystech",
+    "title": "Олимпиада «Физтех»",
+    "organizer": "Московский физико-технический институт (МФТИ)",
+    "rsosh_level": 1,
+    "subjects": ["physics", "math", "informatics"],
+    "grade_from": 9,
+    "grade_to": 11,
+    "benefits_note": "БВИ на физтех-школы МФТИ и 100 баллов по профильному предмету в ведущие технические вузы",
+    "url": "https://olymp-online.mipt.ru",
+    "source_url": "https://mipt.ru/abiturs/olimpiads/phystech/",
+    "verified_at": "2026-09-26T11:00:00+03:00",
+    "is_demo": false,
+    "stages": [
+      {
+        "id": "phystech-reg",
+        "kind": "registration",
+        "name": "Регистрация участников онлайн-тура",
+        "starts_at": "2026-09-20T00:00:00+03:00",
+        "ends_at": "2026-11-30T23:59:00+03:00",
+        "region_code": null,
+        "format": "online"
+      },
+      {
+        "id": "phystech-qualifying",
+        "kind": "qualifying",
+        "name": "Онлайн-отбор через систему Abitu",
+        "starts_at": "2026-10-01T09:00:00+03:00",
+        "ends_at": "2026-12-05T23:59:00+03:00",
+        "region_code": null,
+        "format": "online"
+      },
+      {
+        "id": "phystech-final",
+        "kind": "final",
+        "name": "Финал олимпиады «Физтех»",
+        "starts_at": "2027-02-14T09:00:00+03:00",
+        "ends_at": "2027-02-16T18:00:00+03:00",
+        "region_code": null,
+        "format": "offline"
+      }
+    ]
+  },
+  {
+    "id": "innopolis-open",
+    "title": "Innopolis Open по информатике и робототехнике",
+    "organizer": "Университет Иннополис",
+    "rsosh_level": 1,
+    "subjects": ["informatics", "robotics"],
+    "grade_from": 8,
+    "grade_to": 11,
+    "benefits_note": "БВИ в Иннополис, ИТМО, ВШЭ, МФТИ и грант 100% на обучение в Университете Иннополис",
+    "url": "https://olymp.innopolis.university",
+    "source_url": "https://olymp.innopolis.university/o/regulations",
+    "verified_at": "2026-09-25T16:00:00+03:00",
+    "is_demo": false,
+    "stages": [
+      {
+        "id": "inno-reg",
+        "kind": "registration",
+        "name": "Регистрация на первый тур",
+        "starts_at": "2026-09-15T09:00:00+03:00",
+        "ends_at": "2026-11-12T23:59:00+03:00",
+        "region_code": null,
+        "format": "online"
+      },
+      {
+        "id": "inno-qualifying-1",
+        "kind": "qualifying",
+        "name": "Первый онлайн-раунд",
+        "starts_at": "2026-11-15T15:00:00+03:00",
+        "ends_at": "2026-11-15T20:00:00+03:00",
+        "region_code": null,
+        "format": "online"
+      },
+      {
+        "id": "inno-final",
+        "kind": "final",
+        "name": "Финал в Иннополисе",
+        "starts_at": "2027-02-27T09:00:00+03:00",
+        "ends_at": "2027-03-01T18:00:00+03:00",
+        "region_code": "16",
+        "format": "offline"
+      }
+    ]
+  },
+  {
+    "id": "mosh-informatics",
+    "title": "Московская олимпиада школьников (МОШ) по информатике",
+    "organizer": "Департамент образования и науки города Москвы, ЦПМ",
+    "rsosh_level": 1,
+    "subjects": ["informatics"],
+    "grade_from": 7,
+    "grade_to": 11,
+    "benefits_note": "БВИ при поступлении на IT-специальности в вузы РФ",
+    "url": "https://mosh.olimpiada.ru",
+    "source_url": "https://mosh.olimpiada.ru/documents",
+    "verified_at": "2026-09-22T10:00:00+03:00",
+    "is_demo": false,
+    "stages": [
+      {
+        "id": "mosh-reg",
+        "kind": "registration",
+        "name": "Регистрация участников в ЕСР",
+        "starts_at": "2026-10-05T09:00:00+03:00",
+        "ends_at": "2026-11-20T23:59:00+03:00",
+        "region_code": null,
+        "format": "online"
+      },
+      {
+        "id": "mosh-qualifying",
+        "kind": "qualifying",
+        "name": "Дистанционный этап",
+        "starts_at": "2026-11-21T09:00:00+03:00",
+        "ends_at": "2026-12-10T21:00:00+03:00",
+        "region_code": null,
+        "format": "online"
+      },
+      {
+        "id": "mosh-final",
+        "kind": "final",
+        "name": "Заключительный очный этап",
+        "starts_at": "2027-02-21T09:00:00+03:00",
+        "ends_at": "2027-02-22T17:00:00+03:00",
+        "region_code": "77",
+        "format": "offline"
+      }
+    ]
+  },
+  {
+    "id": "vsosh-municipal",
+    "title": "Всероссийская олимпиада школьников (ВсОШ) — Муниципальный этап",
+    "organizer": "Министерство просвещения РФ",
+    "rsosh_level": null,
+    "subjects": ["math", "informatics", "physics", "chemistry", "biology", "literature", "social_studies"],
+    "grade_from": 7,
+    "grade_to": 11,
+    "benefits_note": "Проход на региональный этап ВсОШ. Диплом заключительного этапа ВсОШ даёт безусловное БВИ во все вузы РФ",
+    "url": "https://vserosolymp.edsoo.ru",
+    "source_url": "https://docs.edu.gov.ru/document/vseros",
+    "verified_at": "2026-09-26T09:00:00+03:00",
+    "is_demo": false,
+    "stages": [
+      {
+        "id": "vsosh-mun-reg",
+        "kind": "registration",
+        "name": "Подача согласий и подтверждение участия",
+        "starts_at": "2026-10-01T09:00:00+03:00",
+        "ends_at": "2026-10-25T23:59:00+03:00",
+        "region_code": null,
+        "format": "online"
+      },
+      {
+        "id": "vsosh-mun-tours",
+        "kind": "qualifying",
+        "name": "Туры муниципального этапа по предметам",
+        "starts_at": "2026-10-28T09:00:00+03:00",
+        "ends_at": "2026-12-15T18:00:00+03:00",
+        "region_code": null,
+        "format": "offline"
+      }
+    ]
+  },
+  {
+    "id": "rosatom",
+    "title": "Отраслевая физико-математическая олимпиада «Росатом»",
+    "organizer": "НИЯУ МИФИ & Госкорпорация «Росатом»",
+    "rsosh_level": 1,
+    "subjects": ["physics", "math"],
+    "grade_from": 8,
+    "grade_to": 11,
+    "benefits_note": "БВИ в НИЯУ МИФИ, МГТУ им. Баумана, МФТИ и целевые квоты Росатома",
+    "url": "https://mephi.ru/schoolchildren/olimpiada_rosatom",
+    "source_url": "https://mephi.ru/regulations/rosatom",
+    "verified_at": "2026-09-21T15:00:00+03:00",
+    "is_demo": false,
+    "stages": [
+      {
+        "id": "rosatom-reg",
+        "kind": "registration",
+        "name": "Регистрация участников",
+        "starts_at": "2026-10-10T09:00:00+03:00",
+        "ends_at": "2026-11-28T23:59:00+03:00",
+        "region_code": null,
+        "format": "online"
+      },
+      {
+        "id": "rosatom-qualifying",
+        "kind": "qualifying",
+        "name": "Отборочные очные и дистанционные туры",
+        "starts_at": "2026-11-01T10:00:00+03:00",
+        "ends_at": "2026-12-10T18:00:00+03:00",
+        "region_code": null,
+        "format": "hybrid"
+      },
+      {
+        "id": "rosatom-final",
+        "kind": "final",
+        "name": "Заключительный этап",
+        "starts_at": "2027-02-07T10:00:00+03:00",
+        "ends_at": "2027-02-14T17:00:00+03:00",
+        "region_code": null,
+        "format": "offline"
+      }
+    ]
+  },
+  {
+    "id": "step-into-the-future",
+    "title": "Олимпиада «Шаг в будущее»",
+    "organizer": "МГТУ им. Н.Э. Баумана",
+    "rsosh_level": 2,
+    "subjects": ["informatics", "physics", "math"],
+    "grade_from": 8,
+    "grade_to": 11,
+    "benefits_note": "БВИ или 100 баллов ЕГЭ в МГТУ им. Баумана и инженерно-технические институты",
+    "url": "https://olymp.bmstu.ru",
+    "source_url": "https://olymp.bmstu.ru/docs",
+    "verified_at": "2026-09-23T11:00:00+03:00",
+    "is_demo": false,
+    "stages": [
+      {
+        "id": "step-reg",
+        "kind": "registration",
+        "name": "Регистрация на первый тур",
+        "starts_at": "2026-09-25T09:00:00+03:00",
+        "ends_at": "2026-10-30T23:59:00+03:00",
+        "region_code": null,
+        "format": "online"
+      },
+      {
+        "id": "step-tour-1",
+        "kind": "qualifying",
+        "name": "Академическое соревнование онлайн",
+        "starts_at": "2026-11-01T10:00:00+03:00",
+        "ends_at": "2026-11-15T20:00:00+03:00",
+        "region_code": null,
+        "format": "online"
+      },
+      {
+        "id": "step-final",
+        "kind": "final",
+        "name": "Финал в МГТУ им. Баумана",
+        "starts_at": "2027-02-20T10:00:00+03:00",
+        "ends_at": "2027-03-05T18:00:00+03:00",
+        "region_code": "77",
+        "format": "offline"
+      }
+    ]
+  },
+  {
+    "id": "spbu-olympiad",
+    "title": "Олимпиада школьников СПбГУ",
+    "organizer": "Санкт-Петербургский государственный университет",
+    "rsosh_level": 1,
+    "subjects": ["informatics", "math", "physics", "chemistry", "biology", "linguistics"],
+    "grade_from": 7,
+    "grade_to": 11,
+    "benefits_note": "БВИ в СПбГУ, ВШЭ СПб, ИТМО и вузы России",
+    "url": "https://olympiada.spbu.ru",
+    "source_url": "https://olympiada.spbu.ru/regulations",
+    "verified_at": "2026-09-26T14:00:00+03:00",
+    "is_demo": false,
+    "stages": [
+      {
+        "id": "spbu-reg",
+        "kind": "registration",
+        "name": "Регистрация и дистанционный тур",
+        "starts_at": "2026-10-20T10:00:00+03:00",
+        "ends_at": "2027-01-12T23:59:00+03:00",
+        "region_code": null,
+        "format": "online"
+      },
+      {
+        "id": "spbu-final",
+        "kind": "final",
+        "name": "Заключительный очный этап",
+        "starts_at": "2027-02-10T10:00:00+03:00",
+        "ends_at": "2027-02-28T18:00:00+03:00",
+        "region_code": null,
+        "format": "offline"
+      }
+    ]
+  },
+  {
+    "id": "technocup",
+    "title": "Олимпиада по программированию «Технокубок»",
+    "organizer": "VK & МГТУ им. Н.Э. Баумана & МФТИ",
+    "rsosh_level": 1,
+    "subjects": ["informatics"],
+    "grade_from": 8,
+    "grade_to": 11,
+    "benefits_note": "БВИ в ведущие IT-вузы и стажировки / фаст-трек в VK",
+    "url": "https://cup.vk.company",
+    "source_url": "https://cup.vk.company/rules",
+    "verified_at": "2026-09-25T19:00:00+03:00",
+    "is_demo": false,
+    "stages": [
+      {
+        "id": "tc-reg",
+        "kind": "registration",
+        "name": "Регистрация участников",
+        "starts_at": "2026-09-10T10:00:00+03:00",
+        "ends_at": "2026-11-20T23:59:00+03:00",
+        "region_code": null,
+        "format": "online"
+      },
+      {
+        "id": "tc-qualifying-1",
+        "kind": "qualifying",
+        "name": "Первый онлайн-раунд",
+        "starts_at": "2026-10-25T13:00:00+03:00",
+        "ends_at": "2026-10-25T15:00:00+03:00",
+        "region_code": null,
+        "format": "online"
+      },
+      {
+        "id": "tc-qualifying-2",
+        "kind": "qualifying",
+        "name": "Второй онлайн-раунд",
+        "starts_at": "2026-11-22T13:00:00+03:00",
+        "ends_at": "2026-11-22T15:00:00+03:00",
+        "region_code": null,
+        "format": "online"
+      },
+      {
+        "id": "tc-final",
+        "kind": "final",
+        "name": "Очный финал в Москве и Санкт-Петербурге",
+        "starts_at": "2027-02-28T11:00:00+03:00",
+        "ends_at": "2027-02-28T16:00:00+03:00",
+        "region_code": null,
+        "format": "offline"
+      }
+    ]
+  }
+]

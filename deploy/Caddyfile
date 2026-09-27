@@ -1,0 +1,30 @@
+# Конфигурация Caddy для автоматического HTTPS и проксирования запросов к бэкенду и Mini App
+{$PUBLIC_DOMAIN:localhost} {
+    # Обратный прокси для REST API
+    handle /api/* {
+        reverse_proxy app:3000
+    }
+
+    # Обратный прокси для документации Swagger OpenAPI
+    handle /docs* {
+        reverse_proxy app:3000
+    }
+
+    # Обратный прокси для Вебхуков платформы MAX
+    handle /webhook {
+        reverse_proxy app:3000
+    }
+
+    # Статические файлы Mini App (клиентской части)
+    handle {
+        root * /var/www/miniapp/dist
+        try_files {path} /index.html
+        file_server
+    }
+
+    # Логирование
+    log {
+        output stdout
+        format console
+    }
+}

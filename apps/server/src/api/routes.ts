@@ -24,16 +24,48 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+export const SUBJECT_TO_RUSSIAN: Record<string, string> = {
+  informatics: 'Информатика',
+  math: 'Математика',
+  physics: 'Физика',
+  chemistry: 'Химия',
+  biology: 'Биология',
+  literature: 'Литература',
+  social_studies: 'Обществознание',
+  economics: 'Экономика',
+  russian: 'Русский язык',
+  history: 'История',
+  english: 'Английский язык',
+};
+
+export const RUSSIAN_TO_CODE: Record<string, string> = {
+  'Информатика': 'informatics',
+  'Математика': 'math',
+  'Физика': 'physics',
+  'Химия': 'chemistry',
+  'Биология': 'biology',
+  'Литература': 'literature',
+  'Обществознание': 'social_studies',
+  'Экономика': 'economics',
+  'Русский язык': 'russian',
+  'История': 'history',
+  'Английский язык': 'english',
+};
+
 // Извлечение пользователя из заголовков запроса
 async function authenticateUser(req: FastifyRequest, reply: FastifyReply, db: Database): Promise<any> {
-  const initDataHeader = req.headers['x-init-data'] as string | undefined;
+  const initDataHeader = (
+    req.headers['x-max-init-data'] ||
+    req.headers['x-init-data']
+  ) as string | undefined;
+
   const mockUserHeader =
     (req.headers['x-user-id'] as string | undefined) ||
     ((req.query as any)?.user_id as string | undefined);
 
   let maxUserId: string | null = null;
 
-  if (initDataHeader) {
+  if (initDataHeader && initDataHeader.trim() !== '') {
     try {
       const parsed = verifyAndParseInitData(initDataHeader);
       maxUserId = String(parsed.user.id);
@@ -54,7 +86,7 @@ async function authenticateUser(req: FastifyRequest, reply: FastifyReply, db: Da
   } else {
     reply.code(401).send({
       error: 'Unauthorized',
-      message: 'Требуется заголовок x-init-data с подписью MAX Bridge (или x-user-id в dev-режиме)',
+      message: 'Требуется заголовок X-Max-Init-Data с подписью MAX Bridge (или x-user-id в dev-режиме)',
     });
     return null;
   }
@@ -93,7 +125,7 @@ export function registerApiRoutes(fastify: FastifyInstance, db: Database) {
       search?: string;
     };
   }>) => {
-    const { subject, grade, level, search } = req.query;
+    const { subject, grade, level, search, format } = req.query;
 
     let sql = `
       SELECT o.id, o.title, o.organizer, o.rsosh_level, o.subjects, o.grade_from, o.grade_to,
@@ -121,16 +153,50 @@ export function registerApiRoutes(fastify: FastifyInstance, db: Database) {
 
     sql += ` ORDER BY o.is_demo DESC, o.rsosh_level ASC NULLS LAST, o.title ASC`;
 
-    const res = await db.query(sql, params);
+    const [olyRes, stagesRes] = await Promise.all([
+      db.query(sql, params),
+      db.query(
+        'SELECT id, olympiad_id, kind, name, starts_at, ends_at, region_code, format FROM stages ORDER BY starts_at ASC'
+      ),
+    ]);
 
-    // Дополнительная фильтрация по предмету в jsonb массиве
-    let rows = res.rows.map(r => ({
-      ...r,
-      subjects: typeof r.subjects === 'string' ? JSON.parse(r.subjects) : r.subjects,
-    }));
+    const stagesByOly: Record<string, any[]> = {};
+    for (const stage of stagesRes.rows) {
+      if (!stagesByOly[stage.olympiad_id]) {
+        stagesByOly[stage.olympiad_id] = [];
+      }
+      stagesByOly[stage.olympiad_id].push({
+        ...stage,
+        format: stage.format || 'online',
+      });
+    }
+
+    let rows = olyRes.rows.map(r => {
+      const rawSubs: string[] = typeof r.subjects === 'string' ? JSON.parse(r.subjects) : (r.subjects || []);
+      const ruSubs = rawSubs.map(s => SUBJECT_TO_RUSSIAN[s] || s);
+      const itemStages = stagesByOly[r.id] || [];
+      const itemFormat = itemStages.find(s => s.format)?.format || 'online';
+
+      return {
+        ...r,
+        subjects: ruSubs,
+        raw_subjects: rawSubs,
+        format: itemFormat,
+        stages: itemStages,
+      };
+    });
 
     if (subject) {
-      rows = rows.filter(r => r.subjects.includes(subject));
+      const targetCode = RUSSIAN_TO_CODE[subject] || subject;
+      rows = rows.filter(r =>
+        r.raw_subjects.includes(targetCode) ||
+        r.subjects.includes(subject) ||
+        r.raw_subjects.includes(subject)
+      );
+    }
+
+    if (format) {
+      rows = rows.filter(r => r.format === format);
     }
 
     return rows;
@@ -150,10 +216,15 @@ export function registerApiRoutes(fastify: FastifyInstance, db: Database) {
     );
 
     const olympiad = olyRes.rows[0];
+    const rawSubs: string[] = typeof olympiad.subjects === 'string' ? JSON.parse(olympiad.subjects) : (olympiad.subjects || []);
+    const ruSubs = rawSubs.map(s => SUBJECT_TO_RUSSIAN[s] || s);
+    const itemStages = stagesRes.rows.map(s => ({ ...s, format: s.format || 'online' }));
+
     return {
       ...olympiad,
-      subjects: typeof olympiad.subjects === 'string' ? JSON.parse(olympiad.subjects) : olympiad.subjects,
-      stages: stagesRes.rows,
+      subjects: ruSubs,
+      format: itemStages[0]?.format || 'online',
+      stages: itemStages,
     };
   });
 
@@ -170,13 +241,13 @@ export function registerApiRoutes(fastify: FastifyInstance, db: Database) {
     return {
       id: user.id,
       max_user_id: user.max_user_id,
-      grade: user.grade,
-      region_code: user.region_code,
-      timezone: user.timezone,
-      quiet_from: user.quiet_from,
-      quiet_to: user.quiet_to,
+      grade: user.grade || 10,
+      region_code: user.region_code || '77',
+      timezone: user.timezone || 'Europe/Moscow',
+      quiet_from: user.quiet_from || '22:00',
+      quiet_to: user.quiet_to || '08:00',
       consent_at: user.consent_at,
-      subjects: subjectsRes.rows.map(r => r.subject_code),
+      subjects: subjectsRes.rows.map(r => SUBJECT_TO_RUSSIAN[r.subject_code] || r.subject_code),
     };
   });
 
@@ -204,18 +275,27 @@ export function registerApiRoutes(fastify: FastifyInstance, db: Database) {
       [data.grade, data.region_code, data.timezone, data.quiet_from, data.quiet_to, user.id]
     );
 
-    // Обновляем предметы, если переданы
+    // Обновляем предметы, если переданы (переводим из русских названий в коды при необходимости)
     if (data.subjects) {
       await db.query('DELETE FROM user_subjects WHERE user_id = $1', [user.id]);
       for (const s of data.subjects) {
+        const code = RUSSIAN_TO_CODE[s] || s;
         await db.query(
           'INSERT INTO user_subjects (user_id, subject_code) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-          [user.id, s]
+          [user.id, code]
         );
       }
     }
 
-    return { status: 'success', message: 'Профиль успешно обновлен' };
+    return {
+      status: 'success',
+      grade: data.grade || user.grade,
+      region_code: data.region_code || user.region_code,
+      timezone: data.timezone || user.timezone,
+      quiet_from: data.quiet_from || user.quiet_from,
+      quiet_to: data.quiet_to || user.quiet_to,
+      subjects: data.subjects || [],
+    };
   });
 
   // --- DELETE /api/me (Удалить все данные) ---
@@ -256,7 +336,7 @@ export function registerApiRoutes(fastify: FastifyInstance, db: Database) {
     );
 
     return subsRes.rows.map(row => ({
-      id: row.id,
+      id: String(row.id),
       user_id: row.user_id,
       olympiad_id: row.olympiad_id,
       status: row.status,
@@ -293,17 +373,19 @@ export function registerApiRoutes(fastify: FastifyInstance, db: Database) {
       `INSERT INTO subscriptions (user_id, olympiad_id, status)
        VALUES ($1, $2, 'interested')
        ON CONFLICT (user_id, olympiad_id) DO UPDATE SET status = 'interested', updated_at = NOW()
-       RETURNING id`,
+       RETURNING id, status`,
       [user.id, olympiad_id]
     );
     const subId = subRes.rows[0].id;
+    const subStatus = subRes.rows[0].status;
 
     // Генерируем напоминания
     const remCount = await generateRemindersForSubscription(db, subId, olympiad_id, user.id);
 
     return {
-      status: 'success',
-      subscription_id: subId,
+      id: String(subId),
+      olympiad_id,
+      status: subStatus,
       reminders_created: remCount,
       is_demo: olyRes.rows[0].is_demo,
     };
@@ -324,17 +406,17 @@ export function registerApiRoutes(fastify: FastifyInstance, db: Database) {
 
     if (status === 'registered') {
       const res = await handleReminderAction(db, subId, 'registered');
-      return { status: 'success', message: res.message };
+      return { id: String(subId), status, message: res.message };
     } else if (status === 'dropped') {
       const res = await handleReminderAction(db, subId, 'drop');
-      return { status: 'success', message: res.message };
+      return { id: String(subId), status, message: res.message };
     } else {
       await db.query('UPDATE subscriptions SET status = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3', [
         status,
         subId,
         user.id,
       ]);
-      return { status: 'success', message: `Статус изменен на ${status}` };
+      return { id: String(subId), status, message: `Статус изменен на ${status}` };
     }
   });
 
@@ -346,9 +428,43 @@ export function registerApiRoutes(fastify: FastifyInstance, db: Database) {
     return list;
   });
 
+  // --- СТАТИЧЕСКИЕ РЕСУРСЫ КЛИЕНТСКОГО MINI APP (VITE ASSETS) ---
+  fastify.get('/assets/*', async (req: FastifyRequest<{ Params: { '*': string } }>, reply: FastifyReply) => {
+    const assetPath = req.params['*'];
+    const candidates = [
+      path.resolve(process.cwd(), 'apps/miniapp/dist/assets', assetPath),
+      path.resolve(process.cwd(), '../miniapp/dist/assets', assetPath),
+      path.resolve(process.cwd(), 'apps/miniapp/public', assetPath),
+      path.resolve(process.cwd(), '../miniapp/public', assetPath),
+      path.resolve(__dirname, '../../../../apps/miniapp/dist/assets', assetPath),
+      path.resolve(__dirname, '../../../miniapp/dist/assets', assetPath),
+    ];
+    for (const p of candidates) {
+      if (fs.existsSync(p)) {
+        const ext = path.extname(p).toLowerCase();
+        const mimeTypes: Record<string, string> = {
+          '.js': 'application/javascript; charset=utf-8',
+          '.css': 'text/css; charset=utf-8',
+          '.svg': 'image/svg+xml',
+          '.png': 'image/png',
+          '.jpg': 'image/jpeg',
+          '.json': 'application/json',
+          '.woff2': 'font/woff2',
+        };
+        if (mimeTypes[ext]) reply.type(mimeTypes[ext]);
+        return reply.send(fs.readFileSync(p));
+      }
+    }
+    return reply.code(404).send({ error: 'Asset not found' });
+  });
+
   // --- МИНИ-ПРИЛОЖЕНИЕ (MINI APP: КАТАЛОГ, ПОДБОРКА, ДЕДЛАЙНЫ, ПРОФИЛЬ) ---
   const serveAppHtml = async (req: FastifyRequest, reply: FastifyReply) => {
     const candidates = [
+      path.resolve(process.cwd(), 'apps/miniapp/dist/index.html'),
+      path.resolve(process.cwd(), '../miniapp/dist/index.html'),
+      path.resolve(__dirname, '../../../../apps/miniapp/dist/index.html'),
+      path.resolve(__dirname, '../../../miniapp/dist/index.html'),
       path.resolve(__dirname, 'app.html'),
       path.resolve(__dirname, '../src/api/app.html'),
       path.resolve(process.cwd(), 'apps/server/src/api/app.html'),
@@ -357,13 +473,17 @@ export function registerApiRoutes(fastify: FastifyInstance, db: Database) {
     for (const htmlPath of candidates) {
       if (fs.existsSync(htmlPath)) {
         const html = fs.readFileSync(htmlPath, 'utf-8');
-        return reply.type('text/html').send(html);
+        return reply.type('text/html; charset=utf-8').send(html);
       }
     }
     return reply.code(404).send({ error: 'app.html not found' });
   };
 
   fastify.get('/app', serveAppHtml);
+  fastify.get('/miniapp', serveAppHtml);
+  fastify.get('/season', serveAppHtml);
+  fastify.get('/settings', serveAppHtml);
+  fastify.get('/olympiads/:id', serveAppHtml);
   fastify.get('/', async (req, reply) => {
     return reply.redirect('/app');
   });

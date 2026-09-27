@@ -4,12 +4,16 @@
   "private": true,
   "workspaces": [
     "packages/shared",
-    "apps/server"
+    "apps/server",
+    "apps/miniapp"
   ],
   "scripts": {
     "local": "./start_local.sh",
     "dev": "npm --workspace=apps/server run dev",
-    "build": "npm --workspaces run build",
+    "dev:server": "npm --workspace=apps/server run dev",
+    "dev:app": "npm --workspace=apps/miniapp run dev",
+    "build": "npm --workspace=packages/shared run build && npm --workspace=apps/server run build && npm --workspace=apps/miniapp run build",
+    "build:app": "npm --workspace=apps/miniapp run build",
     "start": "npm --workspace=apps/server run start",
     "seed": "npm --workspace=apps/server run seed",
     "test": "npm --workspace=apps/server run test",

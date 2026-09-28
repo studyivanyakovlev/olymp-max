@@ -15,7 +15,14 @@ export async function createServer(db: Database, bot?: Bot): Promise<FastifyInst
   await fastify.register(cors, {
     origin: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-init-data', 'x-user-id'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'x-init-data',
+      'x-max-init-data',
+      'x-telegram-init-data',
+      'x-user-id',
+    ],
   });
 
   // Swagger / OpenAPI документация

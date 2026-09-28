@@ -72,23 +72,40 @@ async function authenticateUser(req: FastifyRequest, reply: FastifyReply, db: Da
     } catch (err: any) {
       if (mockUserHeader) {
         maxUserId = mockUserHeader;
-      } else if (process.env.NODE_ENV !== 'production') {
+      } else if (process.env.NODE_ENV !== 'production' || process.env.DEMO_MODE !== 'false') {
         maxUserId = '1';
       } else {
         reply.code(401).send({ error: 'Unauthorized', message: err.message });
         return null;
       }
     }
-  } else if (mockUserHeader) {
-    maxUserId = mockUserHeader;
-  } else if (process.env.NODE_ENV !== 'production') {
-    maxUserId = '1';
-  } else {
-    reply.code(401).send({
-      error: 'Unauthorized',
-      message: 'Требуется заголовок X-Max-Init-Data с подписью MAX Bridge (или x-user-id в dev-режиме)',
-    });
-    return null;
+  }
+
+  // Извлекаем пользователя из Telegram WebApp initData
+  const tgInitHeader = req.headers['x-telegram-init-data'] as string | undefined;
+  if (!maxUserId && tgInitHeader && tgInitHeader.trim() !== '') {
+    try {
+      const params = new URLSearchParams(tgInitHeader);
+      const userStr = params.get('user');
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        if (u.id) maxUserId = String(u.id);
+      }
+    } catch {}
+  }
+
+  if (!maxUserId) {
+    if (mockUserHeader) {
+      maxUserId = mockUserHeader;
+    } else if (process.env.NODE_ENV !== 'production' || process.env.DEMO_MODE !== 'false') {
+      maxUserId = '1';
+    } else {
+      reply.code(401).send({
+        error: 'Unauthorized',
+        message: 'Требуется заголовок X-Max-Init-Data / X-Telegram-Init-Data с подписью или идентификатор пользователя',
+      });
+      return null;
+    }
   }
 
   // Получаем или создаем пользователя в БД
@@ -504,10 +521,26 @@ export function registerApiRoutes(fastify: FastifyInstance, db: Database) {
   };
 
   fastify.get('/app', serveAppHtml);
+  fastify.get('/app/*', serveAppHtml);
   fastify.get('/miniapp', serveAppHtml);
+  fastify.get('/miniapp/*', serveAppHtml);
   fastify.get('/season', serveAppHtml);
   fastify.get('/settings', serveAppHtml);
   fastify.get('/olympiads/:id', serveAppHtml);
+  fastify.get('/mockServiceWorker.js', async (req, reply) => {
+    const candidates = [
+      path.resolve(process.cwd(), 'apps/miniapp/dist/mockServiceWorker.js'),
+      path.resolve(process.cwd(), '../miniapp/dist/mockServiceWorker.js'),
+      path.resolve(process.cwd(), 'apps/miniapp/public/mockServiceWorker.js'),
+      path.resolve(process.cwd(), '../miniapp/public/mockServiceWorker.js'),
+    ];
+    for (const p of candidates) {
+      if (fs.existsSync(p)) {
+        return reply.type('application/javascript; charset=utf-8').send(fs.readFileSync(p));
+      }
+    }
+    return reply.code(404).send({ error: 'mockServiceWorker.js not found' });
+  });
   fastify.get('/', async (req, reply) => {
     return reply.redirect('/app');
   });

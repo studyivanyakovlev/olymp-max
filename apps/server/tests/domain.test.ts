@@ -151,13 +151,39 @@ describe('4. База данных и логика напоминаний', () =
   });
 
   it('Кнопка «Зарегистрировался» отменяет регистрационные напоминания и меняет статус', async () => {
-    const actRes = await handleReminderAction(db, testSubId, 'registered');
+    const actRes = await handleReminderAction(db, testSubId, 'registered', testUserId);
     expect(actRes.success).toBe(true);
 
-    const subCheck = await db.query('SELECT status FROM subscriptions WHERE id = $1', [testSubId]);
+    const subCheck = await db.query(
+      'SELECT status FROM subscriptions WHERE id = $1',
+      [testSubId]
+    );
     expect(subCheck.rows[0].status).toBe('registered');
 
     const remCheck = await db.query('SELECT status FROM reminders WHERE subscription_id = $1', [testSubId]);
     expect(remCheck.rows[0].status).toBe('cancelled');
+  });
+
+  it('Действие другого пользователя не меняет подписку и напоминания', async () => {
+    const otherUser = await db.query(
+      `INSERT INTO users (max_user_id, grade, timezone, quiet_from, quiet_to)
+       VALUES ('another_test_user', 10, 'Europe/Moscow', '22:00', '08:00')
+       ON CONFLICT (max_user_id) DO UPDATE SET updated_at = NOW()
+       RETURNING id`
+    );
+
+    const result = await handleReminderAction(
+      db,
+      testSubId,
+      'drop',
+      otherUser.rows[0].id
+    );
+    expect(result.success).toBe(false);
+
+    const subCheck = await db.query(
+      'SELECT status FROM subscriptions WHERE id = $1',
+      [testSubId]
+    );
+    expect(subCheck.rows[0].status).toBe('registered');
   });
 });

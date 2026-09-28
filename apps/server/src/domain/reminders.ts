@@ -160,15 +160,16 @@ export async function generateRemindersForSubscription(
 export async function handleReminderAction(
   db: Database,
   subscriptionId: number,
-  action: 'registered' | 'remind_tomorrow' | 'drop'
+  action: 'registered' | 'remind_tomorrow' | 'drop',
+  userId: number
 ): Promise<{ success: boolean; message: string }> {
   const subRes = await db.query(
     `SELECT s.id, s.user_id, s.olympiad_id, o.title, u.timezone, u.quiet_from, u.quiet_to
      FROM subscriptions s
      JOIN olympiads o ON o.id = s.olympiad_id
      JOIN users u ON u.id = s.user_id
-     WHERE s.id = $1`,
-    [subscriptionId]
+     WHERE s.id = $1 AND s.user_id = $2`,
+    [subscriptionId, userId]
   );
 
   if (subRes.rowCount === 0) {

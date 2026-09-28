@@ -344,7 +344,7 @@ export async function handleCallbackQuery(ctx: BotContextLike, db: Database) {
       [user.id, olympiadId]
     );
     if (subRes.rowCount > 0) {
-      await handleReminderAction(db, subRes.rows[0].id, 'drop');
+      await handleReminderAction(db, subRes.rows[0].id, 'drop', user.id);
     }
     await ctx.reply(`Подписка отменена.`, { attachments: [keyboards.mainMenu()] });
     return;
@@ -356,7 +356,7 @@ export async function handleCallbackQuery(ctx: BotContextLike, db: Database) {
     const action = parts[1] as 'registered' | 'remind_tomorrow' | 'drop';
     const subscriptionId = parseInt(parts[2], 10);
 
-    const result = await handleReminderAction(db, subscriptionId, action);
+    const result = await handleReminderAction(db, subscriptionId, action, user.id);
     await ctx.reply(result.message, {
       attachments: [keyboards.mainMenu()],
     });

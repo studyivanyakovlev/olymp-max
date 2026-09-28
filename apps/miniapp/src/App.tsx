@@ -309,7 +309,8 @@ function Catalog() {
 
   useEffect(() => {
     // Синхронизация с профилем из бота
-    api.profile()
+    api
+      .profile()
       .then((p) => {
         if (p) {
           setProfile(p);
@@ -340,38 +341,40 @@ function Catalog() {
     [filters.subject, filters.grade, filters.level, filters.format, filtersReady],
   );
 
-  const list = useMemo(
-    () => {
-      let items = state.data ?? [];
+  const list = useMemo(() => {
+    let items = state.data ?? [];
 
-      // В режиме «Моя подборка» отображаем олимпиады строго под класс и предметы из бота
-      if (tab === 'recommended' && profile) {
-        const uGrade = profile.grade;
-        const uSubs = profile.subjects || [];
+    // В режиме «Моя подборка» отображаем олимпиады строго под класс и предметы из бота
+    if (tab === 'recommended' && profile) {
+      const uGrade = profile.grade;
+      const uSubs = profile.subjects || [];
 
-        items = items.filter((item) => {
-          if (uGrade && (uGrade < item.grade_from || uGrade > item.grade_to)) {
-            return false;
-          }
-          if (uSubs.length > 0) {
-            const hasMatch = item.subjects.some((s) =>
+      items = items.filter((item) => {
+        if (uGrade && (uGrade < item.grade_from || uGrade > item.grade_to)) {
+          return false;
+        }
+        if (uSubs.length > 0) {
+          const hasMatch = item.subjects.some(
+            (s) =>
               uSubs.includes(s) ||
-              uSubs.some((us) => s.toLowerCase().includes(us.toLowerCase()) || us.toLowerCase().includes(s.toLowerCase()))
-            );
-            if (!hasMatch) return false;
-          }
-          return true;
-        });
-      }
+              uSubs.some(
+                (us) =>
+                  s.toLowerCase().includes(us.toLowerCase()) ||
+                  us.toLowerCase().includes(s.toLowerCase()),
+              ),
+          );
+          if (!hasMatch) return false;
+        }
+        return true;
+      });
+    }
 
-      return items.filter((item) =>
-        `${item.title} ${item.organizer} ${item.subjects.join(' ')}`
-          .toLocaleLowerCase('ru')
-          .includes(search.toLocaleLowerCase('ru')),
-      );
-    },
-    [state.data, search, tab, profile],
-  );
+    return items.filter((item) =>
+      `${item.title} ${item.organizer} ${item.subjects.join(' ')}`
+        .toLocaleLowerCase('ru')
+        .includes(search.toLocaleLowerCase('ru')),
+    );
+  }, [state.data, search, tab, profile]);
 
   const count = Object.values(filters).filter(Boolean).length;
   return (
@@ -424,7 +427,9 @@ function Catalog() {
             <span className="section-kicker">
               {tab === 'recommended' ? 'СИНХРОНИЗИРОВАНО С БОТОМ' : 'ВЫБИРАЙ И УЧАСТВУЙ'}
             </span>
-            <h2>{tab === 'recommended' ? 'Персональная подборка' : 'Каталог олимпиад'}</h2>
+            <h2>
+              {tab === 'recommended' ? 'Персональная подборка' : 'Каталог олимпиад'}
+            </h2>
             <p>
               {tab === 'recommended'
                 ? profile?.grade
@@ -444,7 +449,9 @@ function Catalog() {
             type="button"
           >
             <span>🎯 Моя подборка</span>
-            {profile?.grade && <span className="catalog-tab-badge">{profile.grade} кл</span>}
+            {profile?.grade && (
+              <span className="catalog-tab-badge">{profile.grade} кл</span>
+            )}
           </button>
           <button
             className={`catalog-tab ${tab === 'all' ? 'active' : ''}`}
@@ -804,6 +811,7 @@ function Season() {
   const [catalogState, refreshCatalog] = useLoad(() => api.olympiads(initialFilters), []);
   const [busyId, setBusyId] = useState('');
   const [message, setMessage] = useState('');
+  const [showAllEvents, setShowAllEvents] = useState(false);
   const navigate = useNavigate();
   const joined = useMemo(
     () =>
@@ -818,18 +826,21 @@ function Season() {
   );
   const events = joined
     .flatMap(({ sub, item }) =>
-      (item?.stages ?? []).map((stage) => ({
-        sub,
-        item: item!,
-        stage,
-        date:
-          stage.kind === 'registration'
-            ? (stage.ends_at ?? stage.starts_at)
-            : stage.starts_at,
-      })),
+      (item?.stages ?? [])
+        .filter((stage) => sub.status !== 'registered' || stage.kind !== 'registration')
+        .map((stage) => ({
+          sub,
+          item: item!,
+          stage,
+          date:
+            stage.kind === 'registration'
+              ? (stage.ends_at ?? stage.starts_at)
+              : stage.starts_at,
+        })),
     )
     .filter((event) => new Date(event.date).getTime() >= Date.now() - 86400000)
     .sort((a, b) => +new Date(a.date) - +new Date(b.date));
+  const visibleEvents = showAllEvents ? events : events.slice(0, 6);
   const combined: LoadState<unknown> = {
     data: joined,
     loading: subState.loading || catalogState.loading,
@@ -890,7 +901,7 @@ function Season() {
             </div>
             {events.length ? (
               <div className="event-list">
-                {events.map(({ item, stage, date }) => (
+                {visibleEvents.map(({ item, stage, date }) => (
                   <button
                     className="event-row"
                     key={`${item.id}-${stage.id}`}
@@ -911,6 +922,17 @@ function Season() {
                     <ChevronRight size={19} />
                   </button>
                 ))}
+                {events.length > 6 && (
+                  <button
+                    className="event-more"
+                    type="button"
+                    onClick={() => setShowAllEvents((value) => !value)}
+                  >
+                    {showAllEvents
+                      ? 'Свернуть список'
+                      : `Показать все события (${events.length})`}
+                  </button>
+                )}
               </div>
             ) : (
               <div className="state-card small">
@@ -938,7 +960,8 @@ function Season() {
                     </span>
                     <span>
                       <strong>{item!.title}</strong>
-                      <small>
+                      <small className={sub.status === 'registered' ? 'registered' : ''}>
+                        {sub.status === 'registered' && <Check size={12} />}
                         {sub.status === 'registered'
                           ? 'Зарегистрирован'
                           : 'Планирую участвовать'}
@@ -1075,8 +1098,22 @@ function Settings() {
           <ShieldCheck size={28} />
           <h2>Данные удалены</h2>
           <p>Все ваши подписки и настройки были удалены.</p>
-          <div style={{ display: 'flex', gap: 10, marginTop: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button className="primary-btn" onClick={() => { setDeleted(false); retry(); }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: 10,
+              marginTop: 16,
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+            }}
+          >
+            <button
+              className="primary-btn"
+              onClick={() => {
+                setDeleted(false);
+                retry();
+              }}
+            >
               Настроить заново
             </button>
             <button className="secondary-btn" onClick={() => navigate('/')}>
@@ -1102,7 +1139,9 @@ function Settings() {
                   <SelectField
                     label="Класс"
                     value={String(draft.grade)}
-                    onChange={(grade) => setDraft({ ...draft, grade: Number(grade) || 10 })}
+                    onChange={(grade) =>
+                      setDraft({ ...draft, grade: Number(grade) || 10 })
+                    }
                     options={[8, 9, 10, 11].map((value) => [
                       String(value),
                       `${value} класс`,
@@ -1187,7 +1226,8 @@ function Settings() {
               </section>
               {draft.subjects.length === 0 && (
                 <p className="field-hint" style={{ marginTop: 0 }}>
-                  <Sparkles size={15} /> Выберите предметы выше для точной подборки олимпиад
+                  <Sparkles size={15} /> Выберите предметы выше для точной подборки
+                  олимпиад
                 </p>
               )}
               <button
@@ -1211,7 +1251,11 @@ function Settings() {
                     Мы храним только идентификатор MAX, класс, предметы, регион и
                     настройки напоминаний.
                   </p>
-                  <button className="danger-link" onClick={() => setConfirmDelete(true)} type="button">
+                  <button
+                    className="danger-link"
+                    onClick={() => setConfirmDelete(true)}
+                    type="button"
+                  >
                     Удалить мои данные
                   </button>
                 </div>
@@ -1234,7 +1278,12 @@ function Settings() {
                       >
                         Отмена
                       </button>
-                      <button className="danger-btn" disabled={busy} onClick={deleteData} type="button">
+                      <button
+                        className="danger-btn"
+                        disabled={busy}
+                        onClick={deleteData}
+                        type="button"
+                      >
                         Удалить
                       </button>
                     </div>

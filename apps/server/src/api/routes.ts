@@ -446,10 +446,16 @@ export function registerApiRoutes(fastify: FastifyInstance, db: Database) {
     const { status } = parseResult.data;
 
     if (status === 'registered') {
-      const res = await handleReminderAction(db, subId, 'registered');
+      const res = await handleReminderAction(db, subId, 'registered', user.id);
+      if (!res.success) {
+        return reply.code(404).send({ error: 'Not Found', message: res.message });
+      }
       return { id: String(subId), status, message: res.message };
     } else if (status === 'dropped') {
-      const res = await handleReminderAction(db, subId, 'drop');
+      const res = await handleReminderAction(db, subId, 'drop', user.id);
+      if (!res.success) {
+        return reply.code(404).send({ error: 'Not Found', message: res.message });
+      }
       return { id: String(subId), status, message: res.message };
     } else {
       await db.query('UPDATE subscriptions SET status = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3', [

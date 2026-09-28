@@ -373,7 +373,9 @@ a {
   height: 46px;
   box-sizing: border-box;
   color: #94a3b8;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 .search-box:focus-within {
   border-color: #7961e8;
@@ -479,7 +481,9 @@ a {
 .catalog-tab.active {
   background: #fff;
   color: #5b45d6;
-  box-shadow: 0 2px 8px rgba(91, 69, 214, 0.12), 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 2px 8px rgba(91, 69, 214, 0.12),
+    0 1px 2px rgba(0, 0, 0, 0.04);
 }
 .catalog-tab-badge {
   background: #e2e8f0;
@@ -1034,6 +1038,7 @@ a {
   display: flex;
   flex-direction: column;
   gap: 3px;
+  min-width: 0;
 }
 .season-summary strong {
   font-size: 25px;
@@ -1045,8 +1050,11 @@ a {
 }
 .season-layout {
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
   gap: 22px;
+}
+.season-layout > section {
+  min-width: 0;
 }
 .section-title.compact {
   margin-bottom: 14px;
@@ -1075,6 +1083,17 @@ a {
 .event-row:last-child,
 .my-card:last-child {
   border-bottom: 0;
+}
+.event-more {
+  display: block;
+  width: 100%;
+  padding: 14px 0;
+  border: 0;
+  background: none;
+  color: #7059dc;
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
 }
 .event-row > svg {
   color: #a7afbd;
@@ -1149,10 +1168,23 @@ a {
 .my-card-title strong {
   font-size: 11px;
   line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 .my-card-title small {
   font-size: 9px;
   color: #a0a8b7;
+}
+.my-card-title small.registered {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 4px;
+  padding: 4px 7px;
+  border-radius: 6px;
+  background: #e8f8ee;
+  color: #27834e;
+  font-size: 10px;
+  font-weight: 700;
 }
 .my-card-title > svg {
   color: #a7afbd;
@@ -1509,12 +1541,17 @@ a {
     padding: 20px;
   }
   .season-summary {
-    gap: 17px;
-    padding: 18px;
+    display: grid;
+    grid-template-columns: 45px repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding: 16px;
   }
   .summary-icon {
     width: 45px;
     height: 45px;
+  }
+  .season-summary span {
+    overflow-wrap: anywhere;
   }
   .season-summary strong {
     font-size: 21px;

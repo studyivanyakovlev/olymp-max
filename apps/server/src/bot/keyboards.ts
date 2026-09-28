@@ -60,6 +60,9 @@ export const keyboards = {
         Keyboard.button.callback('10 класс', 'grade:10'),
         Keyboard.button.callback('11 класс', 'grade:11'),
       ],
+      [
+        Keyboard.button.callback('🔙 Главное меню', 'menu:main'),
+      ],
     ]);
   },
 
@@ -76,6 +79,9 @@ export const keyboards = {
       ],
       [
         Keyboard.button.callback('🔙 Назад в настройки', 'menu:settings'),
+      ],
+      [
+        Keyboard.button.callback('🏠 Главное меню', 'menu:main'),
       ],
     ]);
   },
@@ -109,6 +115,7 @@ export const keyboards = {
     }
 
     rows.push([Keyboard.button.callback('➡️ Готово, перейти дальше', 'subjects_done')]);
+    rows.push([Keyboard.button.callback('🔙 Главное меню', 'menu:main')]);
     return Keyboard.inlineKeyboard(rows);
   },
 
@@ -145,14 +152,18 @@ export const keyboards = {
     ]);
     rows.push([
       Keyboard.button.callback('🔙 Назад в настройки', 'menu:settings'),
+      Keyboard.button.callback('🏠 Главное меню', 'menu:main'),
     ]);
     return Keyboard.inlineKeyboard(rows);
   },
 
   // Выбор региона при онбординге
   regionsKeyboard() {
-    const rows = REGION_OPTIONS.map(r => [
+    const rows: any[][] = REGION_OPTIONS.map(r => [
       Keyboard.button.callback(r.title, `region:${r.code}`),
+    ]);
+    rows.push([
+      Keyboard.button.callback('🔙 Главное меню', 'menu:main'),
     ]);
     return Keyboard.inlineKeyboard(rows);
   },
@@ -164,6 +175,7 @@ export const keyboards = {
     ]);
     rows.push([
       Keyboard.button.callback('🔙 Назад в настройки', 'menu:settings'),
+      Keyboard.button.callback('🏠 Главное меню', 'menu:main'),
     ]);
     return Keyboard.inlineKeyboard(rows);
   },
@@ -181,6 +193,7 @@ export const keyboards = {
       ],
       [
         Keyboard.button.callback('🔙 Назад в настройки', 'menu:settings'),
+        Keyboard.button.callback('🏠 Главное меню', 'menu:main'),
       ],
     ]);
   },
@@ -217,6 +230,10 @@ export const keyboards = {
       Keyboard.button.openApp('📱 Открыть в Mini App', `app_${olympiadId}`),
     ]);
 
+    rows.push([
+      Keyboard.button.callback('🏠 Главное меню', 'menu:main'),
+    ]);
+
     return Keyboard.inlineKeyboard(rows);
   },
 
@@ -229,6 +246,9 @@ export const keyboards = {
       ],
       [
         Keyboard.button.callback('❌ Не участвую', `act:drop:${subscriptionId}`),
+      ],
+      [
+        Keyboard.button.callback('🏠 Главное меню', 'menu:main'),
       ],
     ];
 
@@ -251,7 +271,7 @@ export const keyboards = {
     return Keyboard.inlineKeyboard([
       [
         Keyboard.button.callback('🗑 Да, удалить все мои данные', 'confirm_delete'),
-        Keyboard.button.callback('Отмена', 'menu:main'),
+        Keyboard.button.callback('🔙 Главное меню (Отмена)', 'menu:main'),
       ],
     ]);
   },

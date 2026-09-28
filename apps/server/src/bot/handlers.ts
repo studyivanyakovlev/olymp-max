@@ -572,4 +572,8 @@ async function sendRecommendationsList(ctx: BotContextLike, db: Database, userId
       attachments: [keyboards.olympiadCard(item.id, item.url, isSub)],
     });
   }
+
+  await ctx.reply('📋 Чтобы перейти к дедлайнам, каталогу или настройкам:', {
+    attachments: [keyboards.backToMenu()],
+  });
 }

@@ -139,9 +139,9 @@ export async function importDataset(filePath: string, db: Database): Promise<{ o
   return { olympiadsCount, stagesCount, updatedCount };
 }
 
-export async function runSeed() {
+export async function runSeed(existingDb?: Database) {
   console.log('--- Запуск импорта датасетов ---');
-  const db = await getDb();
+  const db = existingDb || (await getDb());
 
   const olympiadsFile = findDataFile('data/olympiads.json');
   const demoFile = findDataFile('data/demo.json');
@@ -161,11 +161,16 @@ export async function runSeed() {
   }
 
   console.log('--- Импорт успешно завершён ---');
+  return db;
 }
 
 if (process.argv[1]?.endsWith('seed.ts') || process.argv[1]?.endsWith('seed.js')) {
   runSeed()
-    .then(() => process.exit(0))
+    .then(async (db) => {
+      // Обязательно корректно закрываем базу для сброса на диск PGlite
+      if (db) await db.close();
+      process.exit(0);
+    })
     .catch((err) => {
       console.error('Ошибка импорта датасета:', err);
       process.exit(1);

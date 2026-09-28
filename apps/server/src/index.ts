@@ -16,6 +16,21 @@ async function bootstrap() {
   // 1. Инициализация базы данных и схемы
   const db = await getDb();
 
+  // Автоматический импорт датасетов, если база пуста
+  try {
+    const checkRes = await db.query('SELECT COUNT(*) as count FROM olympiads');
+    const olyCount = parseInt(checkRes.rows[0]?.count || '0', 10);
+    if (olyCount === 0) {
+      console.log('ℹ️ В базе данных 0 олимпиад. Автоматический импорт датасетов (seed)...');
+      const { runSeed } = await import('./db/seed.js');
+      await runSeed(db);
+    } else {
+      console.log(`✓ В базе данных загружено олимпиад: ${olyCount}`);
+    }
+  } catch (err: any) {
+    console.warn('⚠️ Ошибка проверки/автоимпорта датасетов:', err.message);
+  }
+
   // 2. Инициализация чат-бота MAX
   const bot = setupBot(db);
 

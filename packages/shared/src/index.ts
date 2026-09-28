@@ -57,12 +57,12 @@ export const UserProfileSchema = z.object({
 export type UserProfile = z.infer<typeof UserProfileSchema>;
 
 export const UpdateProfileInputSchema = z.object({
-  grade: z.number().int().min(1).max(11).optional(),
+  grade: z.coerce.number().int().min(1).max(11).optional(),
   subjects: z.array(z.string()).optional(),
   region_code: z.string().nullable().optional(),
   timezone: z.string().optional(),
-  quiet_from: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/).optional(),
-  quiet_to: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/).optional(),
+  quiet_from: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/).or(z.literal('')).optional(),
+  quiet_to: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/).or(z.literal('')).optional(),
 });
 export type UpdateProfileInput = z.infer<typeof UpdateProfileInputSchema>;
 

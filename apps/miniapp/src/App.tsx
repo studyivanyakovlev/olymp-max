@@ -209,9 +209,6 @@ function BottomNav() {
 function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const isDetail =
-    location.pathname.startsWith('/olympiads/') ||
-    location.pathname.startsWith('/app/olympiads/');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -239,14 +236,20 @@ function Layout() {
       : (window as any).Telegram?.WebApp?.BackButton;
     if (!backButton) return;
     const goBack = () => navigate('/');
-    if (isDetail) {
+    const shouldShow =
+      location.pathname !== '/' &&
+      location.pathname !== '/app' &&
+      location.pathname !== '/miniapp';
+    if (shouldShow) {
       backButton.show();
       backButton.onClick(goBack);
-    } else backButton.hide();
+    } else {
+      backButton.hide();
+    }
     return () => {
-      if (isDetail) backButton.offClick(goBack);
+      if (shouldShow) backButton.offClick(goBack);
     };
-  }, [isDetail, navigate]);
+  }, [location.pathname, navigate]);
 
   useEffect(() => {
     const start = startOlympiadId();
@@ -995,22 +998,25 @@ function PageHeader({
 }
 
 function Settings() {
+  const navigate = useNavigate();
   const [state, retry] = useLoad(() => api.profile(), []);
   const [draft, setDraft] = useState<Profile | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleted, setDeleted] = useState(false);
+
   useEffect(() => {
     if (state.data) setDraft(state.data);
   }, [state.data]);
+
   async function save() {
     if (!draft) return;
     setBusy(true);
     setMessage('');
     try {
       await api.updateProfile(draft);
-      setMessage('Настройки сохранены. Подборка обновится с учётом изменений.');
+      setMessage('Настройки сохранены! Подборка обновлена.');
       retry();
     } catch (error) {
       setMessage(
@@ -1020,24 +1026,45 @@ function Settings() {
       setBusy(false);
     }
   }
+
   async function deleteData() {
     setBusy(true);
     setMessage('');
     try {
       await api.deleteProfile();
-      setMessage(
-        'Данные удалены. Чтобы снова пользоваться подборкой, начни диалог с ботом.',
-      );
       setConfirmDelete(false);
-      setDeleted(true);
+      // Сбрасываем форму в дефолтное состояние, чтобы пользователь мог сразу изменить город/время/класс и сохранить
+      const freshDraft: Profile = {
+        grade: 10,
+        region_code: '77',
+        subjects: [],
+        quiet_from: '22:00',
+        quiet_to: '08:00',
+        timezone: 'Europe/Moscow',
+      };
+      setDraft(freshDraft);
+      setMessage(
+        'Все данные удалены. Вы можете заново выбрать город, класс и время ниже и сохранить, либо вернуться в меню.',
+      );
+      retry();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Не удалось удалить данные.');
     } finally {
       setBusy(false);
     }
   }
+
   return (
     <main className="screen settings-screen">
+      <button
+        className="back-link"
+        onClick={() => navigate('/')}
+        type="button"
+        style={{ marginBottom: 12 }}
+      >
+        <ArrowLeft size={18} /> Назад в меню
+      </button>
+
       <PageHeader
         eyebrow="ПОД ТЕБЯ"
         title="Настройки"
@@ -1045,9 +1072,17 @@ function Settings() {
       />
       {deleted ? (
         <div className="state-card" role="status">
-          <ShieldCheck size={24} />
+          <ShieldCheck size={28} />
           <h2>Данные удалены</h2>
-          <p>Чтобы снова пользоваться подборкой, начни диалог с ботом MAX.</p>
+          <p>Все ваши подписки и настройки были удалены.</p>
+          <div style={{ display: 'flex', gap: 10, marginTop: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <button className="primary-btn" onClick={() => { setDeleted(false); retry(); }}>
+              Настроить заново
+            </button>
+            <button className="secondary-btn" onClick={() => navigate('/')}>
+              В главное меню
+            </button>
+          </div>
         </div>
       ) : (
         <ViewState state={state} retry={retry}>
@@ -1067,7 +1102,7 @@ function Settings() {
                   <SelectField
                     label="Класс"
                     value={String(draft.grade)}
-                    onChange={(grade) => setDraft({ ...draft, grade: Number(grade) })}
+                    onChange={(grade) => setDraft({ ...draft, grade: Number(grade) || 10 })}
                     options={[8, 9, 10, 11].map((value) => [
                       String(value),
                       `${value} класс`,
@@ -1096,6 +1131,7 @@ function Settings() {
                       <button
                         className={`subject-chip ${draft.subjects.includes(subject) ? 'active' : ''}`}
                         key={subject}
+                        type="button"
                         onClick={() =>
                           setDraft({
                             ...draft,
@@ -1149,10 +1185,16 @@ function Settings() {
                   {draft.timezone}.
                 </p>
               </section>
+              {draft.subjects.length === 0 && (
+                <p className="field-hint" style={{ marginTop: 0 }}>
+                  <Sparkles size={15} /> Выберите предметы выше для точной подборки олимпиад
+                </p>
+              )}
               <button
                 className="primary-btn save-btn"
-                disabled={busy || !draft.subjects.length}
+                disabled={busy}
                 onClick={save}
+                type="button"
               >
                 {busy ? 'Сохраняем…' : 'Сохранить изменения'} <ArrowRight size={18} />
               </button>
@@ -1169,7 +1211,7 @@ function Settings() {
                     Мы храним только идентификатор MAX, класс, предметы, регион и
                     настройки напоминаний.
                   </p>
-                  <button className="danger-link" onClick={() => setConfirmDelete(true)}>
+                  <button className="danger-link" onClick={() => setConfirmDelete(true)} type="button">
                     Удалить мои данные
                   </button>
                 </div>
@@ -1188,10 +1230,11 @@ function Settings() {
                       <button
                         className="secondary-btn"
                         onClick={() => setConfirmDelete(false)}
+                        type="button"
                       >
                         Отмена
                       </button>
-                      <button className="danger-btn" disabled={busy} onClick={deleteData}>
+                      <button className="danger-btn" disabled={busy} onClick={deleteData} type="button">
                         Удалить
                       </button>
                     </div>

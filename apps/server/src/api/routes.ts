@@ -262,17 +262,23 @@ export function registerApiRoutes(fastify: FastifyInstance, db: Database) {
     }
     const data = parseResult.data;
 
-    // Обновляем основные поля
+    // Обновляем основные поля с защитой от NULL
+    const cleanGrade = data.grade || user.grade || 10;
+    const cleanRegion = data.region_code || user.region_code || '77';
+    const cleanTimezone = data.timezone || user.timezone || 'Europe/Moscow';
+    const cleanQuietFrom = data.quiet_from && data.quiet_from.trim() !== '' ? data.quiet_from : (user.quiet_from || '22:00');
+    const cleanQuietTo = data.quiet_to && data.quiet_to.trim() !== '' ? data.quiet_to : (user.quiet_to || '08:00');
+
     await db.query(
       `UPDATE users SET
-         grade = COALESCE($1, grade),
-         region_code = COALESCE($2, region_code),
-         timezone = COALESCE($3, timezone),
-         quiet_from = COALESCE($4, quiet_from),
-         quiet_to = COALESCE($5, quiet_to),
+         grade = $1,
+         region_code = $2,
+         timezone = $3,
+         quiet_from = $4,
+         quiet_to = $5,
          updated_at = NOW()
        WHERE id = $6`,
-      [data.grade, data.region_code, data.timezone, data.quiet_from, data.quiet_to, user.id]
+      [cleanGrade, cleanRegion, cleanTimezone, cleanQuietFrom, cleanQuietTo, user.id]
     );
 
     // Обновляем предметы, если переданы (переводим из русских названий в коды при необходимости)
@@ -289,11 +295,11 @@ export function registerApiRoutes(fastify: FastifyInstance, db: Database) {
 
     return {
       status: 'success',
-      grade: data.grade || user.grade,
-      region_code: data.region_code || user.region_code,
-      timezone: data.timezone || user.timezone,
-      quiet_from: data.quiet_from || user.quiet_from,
-      quiet_to: data.quiet_to || user.quiet_to,
+      grade: cleanGrade,
+      region_code: cleanRegion,
+      timezone: cleanTimezone,
+      quiet_from: cleanQuietFrom,
+      quiet_to: cleanQuietTo,
       subjects: data.subjects || [],
     };
   });
@@ -303,7 +309,25 @@ export function registerApiRoutes(fastify: FastifyInstance, db: Database) {
     const user = await authenticateUser(req, reply, db);
     if (!user) return;
 
-    await db.query('DELETE FROM users WHERE id = $1', [user.id]);
+    // 1. Удаляем подписки пользователя (все напоминания удаляются каскадно)
+    await db.query('DELETE FROM subscriptions WHERE user_id = $1', [user.id]);
+    // 2. Удаляем выбранные предметы
+    await db.query('DELETE FROM user_subjects WHERE user_id = $1', [user.id]);
+    // 3. Удаляем состояние диалога в боте
+    await db.query('DELETE FROM dialog_state WHERE user_id = $1', [user.id]);
+    // 4. Сбрасываем профиль к дефолтным значениям
+    await db.query(
+      `UPDATE users SET
+         grade = 10,
+         region_code = '77',
+         timezone = 'Europe/Moscow',
+         quiet_from = '22:00',
+         quiet_to = '08:00',
+         consent_at = NULL,
+         updated_at = NOW()
+       WHERE id = $1`,
+      [user.id]
+    );
     return { status: 'success', message: 'Все данные пользователя удалены' };
   });
 

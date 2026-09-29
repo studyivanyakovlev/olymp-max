@@ -26,6 +26,24 @@ declare global {
 
 export const bridge = () => window.WebApp;
 export const initData = () => bridge()?.initData ?? '';
+
+// На ПК и в веб-версии MAX WebApp.initData появляется не сразу после загрузки страницы:
+// первые запросы уходили без подписи и получали 401. Ждём подпись один раз, не дольше 3 секунд.
+let initDataWait: Promise<string> | null = null;
+export function waitForInitData(timeoutMs = 3000): Promise<string> {
+  if (!initDataWait) {
+    initDataWait = new Promise((resolve) => {
+      const started = Date.now();
+      const check = () => {
+        const value = initData();
+        if (value || !bridge() || Date.now() - started >= timeoutMs) resolve(value);
+        else setTimeout(check, 100);
+      };
+      check();
+    });
+  }
+  return initDataWait;
+}
 const inMax = () => Boolean(initData());
 
 export function getUserId(): string {

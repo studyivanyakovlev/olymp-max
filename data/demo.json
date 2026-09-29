@@ -8,8 +8,8 @@
     "grade_from": 8,
     "grade_to": 11,
     "benefits_note": "Демонстрационная олимпиада для быстрой проверки жюри. Первое напоминание приходит ровно через 1 минуту после подписки!",
-    "url": "https://max.ru/olympiad-demo",
-    "source_url": "https://platform-api2.max.ru/docs",
+    "url": "https://olymp.quiet-harbor.xyz/olympiads/demo-jury-olympiad",
+    "source_url": "https://github.com/studyivanyakovlev/olymp-max/blob/main/data/demo.json",
     "verified_at": "2026-09-27T12:00:00+03:00",
     "is_demo": true,
     "stages": [

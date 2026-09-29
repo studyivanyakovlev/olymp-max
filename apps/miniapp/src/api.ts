@@ -1,4 +1,4 @@
-import { initData, getUserId } from './bridge';
+import { initData, getUserId, waitForInitData } from './bridge';
 import type {
   Filters,
   Olympiad,
@@ -7,9 +7,12 @@ import type {
   SubscriptionStatus,
 } from './types';
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+// Каталог публичный, а профиль, подписки и подборка требуют подписи MAX
+const needsUser = (path: string) => path.startsWith('/me') || path.startsWith('/recommendations');
+
+async function request<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
   const userId = getUserId();
-  const maxInit = initData();
+  const maxInit = needsUser(path) ? await waitForInitData() : initData();
 
   // Сервер узнаёт пользователя по подписанному initData. X-User-Id нужен только
   // для локальной разработки без MAX: боевой сервер его не принимает.
@@ -26,6 +29,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     headers,
   });
   if (!response.ok) {
+    // Запрос ушёл без подписи, а она уже появилась — повторяем один раз
+    if (response.status === 401 && !maxInit && !retried && initData()) {
+      return request<T>(path, options, true);
+    }
     if (response.status === 401)
       throw new Error('Сессия MAX истекла. Откройте приложение из бота снова.');
     throw new Error(

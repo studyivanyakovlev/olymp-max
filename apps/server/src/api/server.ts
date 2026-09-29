@@ -4,7 +4,9 @@ import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { Database } from '../db/index.js';
 import { registerApiRoutes } from './routes.js';
+import crypto from 'crypto';
 import { Bot } from '@maxhub/max-bot-api';
+import { webhookSecret } from '../config.js';
 
 export async function createServer(db: Database, bot?: Bot): Promise<FastifyInstance> {
   const fastify = Fastify({
@@ -65,6 +67,11 @@ export async function createServer(db: Database, bot?: Bot): Promise<FastifyInst
 
   // Эндпоинт Вебхука MAX Bot API
   fastify.post('/webhook', async (req, reply) => {
+    const received = Buffer.from(String(req.headers['x-max-bot-api-secret'] ?? ''));
+    const expected = Buffer.from(webhookSecret());
+    if (received.length !== expected.length || !crypto.timingSafeEqual(received, expected)) {
+      return reply.code(401).send({ ok: false });
+    }
     if (bot) {
       try {
         await (bot as any).handleUpdate(req.body as any);

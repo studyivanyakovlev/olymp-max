@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 
 // Загружаем .env из корня проекта или текущего каталога
 const envCandidates = [
@@ -59,3 +60,16 @@ export const config: Config = {
   demoMode: process.env.DEMO_MODE !== 'false',
   isDev: process.env.NODE_ENV !== 'production',
 };
+
+/** Токен-заглушка: бот не ходит в MAX, сообщения только пишутся в лог (локальная разработка). */
+export function isDemoToken(token: string = config.botToken): boolean {
+  return token === 'mock_token' || token.startsWith('test_');
+}
+
+/**
+ * Секрет вебхука: MAX присылает его в заголовке X-Max-Bot-Api-Secret, и чужие POST на /webhook отклоняются.
+ * Если WEBHOOK_SECRET не задан, секрет выводится из токена бота.
+ */
+export function webhookSecret(): string {
+  return process.env.WEBHOOK_SECRET || crypto.createHash('sha256').update(`olymp-max-webhook:${config.botToken}`).digest('hex');
+}

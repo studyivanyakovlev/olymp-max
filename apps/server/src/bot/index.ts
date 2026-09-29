@@ -1,8 +1,7 @@
-import { Bot } from '@maxhub/max-bot-api';
-import { fetch as undiciFetch, Agent } from 'undici';
+import type { Bot } from '@maxhub/max-bot-api';
 import { Database } from '../db/index.js';
-import { config } from '../config.js';
 import { keyboards } from './keyboards.js';
+import { createMaxBot } from './maxClient.js';
 import {
   handleStartCommand,
   handleMenuCommand,
@@ -12,22 +11,8 @@ import {
   handleCallbackQuery,
 } from './handlers.js';
 
-const maxAgent = new Agent({
-  connect: {
-    rejectUnauthorized: false,
-  },
-});
-
-const customFetch: typeof fetch = (url: any, init: any = {}) => {
-  return undiciFetch(url, { ...init, dispatcher: maxAgent }) as any;
-};
-
 export function setupBot(db: Database): Bot {
-  const bot = new Bot(config.botToken, {
-    clientOptions: {
-      fetch: customFetch,
-    },
-  });
+  const bot = createMaxBot();
 
   // Централизованная обработка ошибок: ошибка не роняет процесс!
   bot.catch((err: any) => {

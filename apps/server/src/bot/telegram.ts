@@ -10,6 +10,7 @@ import {
   handleCallbackQuery,
   BotContextLike,
 } from './handlers.js';
+import { telegramUserKey } from '../domain/identity.js';
 
 let tgBotInstance: TgBot | null = null;
 
@@ -29,7 +30,14 @@ function isValidTelegramUrl(urlStr: string): boolean {
 /**
  * Преобразование кнопок формата MAX Bot API в нативные кнопки Telegram InlineKeyboard
  */
-function convertMaxButtonsToTelegram(extra?: any, userId?: string): any {
+function miniAppUrl(startParam?: string | null): string {
+  const baseUrl = config.miniappUrl || `http://localhost:${config.port}/app`;
+  if (!startParam) return baseUrl;
+  const separator = baseUrl.includes('?') ? '&' : '?';
+  return `${baseUrl}${separator}startapp=${encodeURIComponent(startParam)}`;
+}
+
+function convertMaxButtonsToTelegram(extra?: any): any {
   if (!extra?.attachments) return undefined;
 
   const inlineKeyboard = new InlineKeyboard();
@@ -47,9 +55,8 @@ function convertMaxButtonsToTelegram(extra?: any, userId?: string): any {
               inlineKeyboard.text(btn.text, `link_info:${btn.url}`);
             }
           } else if (btn.type === 'open_app') {
-            const baseUrl = config.miniappUrl || `http://localhost:${config.port}/app`;
-            const separator = baseUrl.includes('?') ? '&' : '?';
-            const targetUrl = userId ? `${baseUrl}${separator}user_id=${encodeURIComponent(userId)}` : baseUrl;
+            // Пользователя Mini App узнаёт из подписанного Telegram.WebApp.initData, а не из URL
+            const targetUrl = miniAppUrl(btn.payload);
             if (targetUrl.startsWith('https://') && isValidTelegramUrl(targetUrl)) {
               inlineKeyboard.webApp(btn.text, targetUrl);
             } else if (isValidTelegramUrl(targetUrl)) {
@@ -69,7 +76,7 @@ function convertMaxButtonsToTelegram(extra?: any, userId?: string): any {
 }
 
 function adaptTelegramContext(ctx: any): BotContextLike {
-  const userId = String(ctx.from?.id || ctx.chat?.id || '');
+  const userId = telegramUserKey(ctx.from?.id || ctx.chat?.id || '');
   return {
     user: {
       id: userId,
@@ -82,11 +89,11 @@ function adaptTelegramContext(ctx: any): BotContextLike {
       ? { callback_id: ctx.callbackQuery.id, payload: ctx.callbackQuery.data }
       : undefined,
     async reply(text: string, extra?: any) {
-      const tgExtra = convertMaxButtonsToTelegram(extra, userId);
+      const tgExtra = convertMaxButtonsToTelegram(extra);
       return ctx.reply(text, tgExtra);
     },
     async editMessageText(text: string, extra?: any) {
-      const tgExtra = convertMaxButtonsToTelegram(extra, userId);
+      const tgExtra = convertMaxButtonsToTelegram(extra);
       if (ctx.editMessageText) {
         try {
           return await ctx.editMessageText(text, tgExtra);
@@ -161,10 +168,7 @@ export function setupTelegramBot(db: Database): TgBot | null {
   if (menuInterval.unref) menuInterval.unref();
 
   const handleAppCommand = async (ctx: any) => {
-    const userId = String(ctx.from?.id || ctx.chat?.id || '');
-    const baseUrl = config.miniappUrl || `http://localhost:${config.port}/app`;
-    const separator = baseUrl.includes('?') ? '&' : '?';
-    const targetUrl = userId ? `${baseUrl}${separator}user_id=${encodeURIComponent(userId)}` : baseUrl;
+    const targetUrl = miniAppUrl();
 
     const keyboard = new InlineKeyboard();
     if (targetUrl.startsWith('https://') && isValidTelegramUrl(targetUrl)) {

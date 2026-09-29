@@ -12,21 +12,18 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const maxInit = initData();
   const tgInit = (window as any).Telegram?.WebApp?.initData || '';
 
+  // Сервер узнаёт пользователя по подписанному initData. X-User-Id нужен только
+  // для локальной разработки без MAX: боевой сервер его не принимает.
+  const signed = Boolean(maxInit || tgInit);
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(maxInit ? { 'X-Max-Init-Data': maxInit } : {}),
     ...(tgInit ? { 'X-Telegram-Init-Data': tgInit } : {}),
-    ...(userId ? { 'X-User-Id': userId } : {}),
+    ...(!signed && userId ? { 'X-User-Id': userId } : {}),
     ...((options.headers as any) || {}),
   };
 
-  let fullPath = `/api${path}`;
-  if (userId && !fullPath.includes('user_id=')) {
-    const sep = fullPath.includes('?') ? '&' : '?';
-    fullPath += `${sep}user_id=${encodeURIComponent(userId)}`;
-  }
-
-  const response = await fetch(fullPath, {
+  const response = await fetch(`/api${path}`, {
     ...options,
     headers,
   });

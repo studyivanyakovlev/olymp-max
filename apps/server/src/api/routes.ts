@@ -4,6 +4,8 @@ import { fileURLToPath } from 'url';
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { Database } from '../db/index.js';
 import { verifyAndParseInitData } from '../domain/security.js';
+import { telegramUserKey, isPlaygroundUserKey } from '../domain/identity.js';
+import { config, isDemoToken } from '../config.js';
 import { generateRemindersForSubscription, handleReminderAction } from '../domain/reminders.js';
 import { getRecommendationsForUser } from '../domain/recommendations.js';
 import {
@@ -52,60 +54,44 @@ export const RUSSIAN_TO_CODE: Record<string, string> = {
   'Английский язык': 'english',
 };
 
-// Извлечение пользователя из заголовков запроса
+// Извлечение пользователя из подписанного initData.
+// MAX Bridge присылает WebApp.initData в X-Max-Init-Data, Telegram WebApp — в X-Telegram-Init-Data.
+// Без подписи пользователь определяется по X-User-Id только с токеном-заглушкой:
+// так работают playground и локальная разработка, а на боевом токене подменить ID нельзя.
 async function authenticateUser(req: FastifyRequest, reply: FastifyReply, db: Database): Promise<any> {
-  const initDataHeader = (
-    req.headers['x-max-init-data'] ||
-    req.headers['x-init-data']
-  ) as string | undefined;
-
-  const mockUserHeader =
-    (req.headers['x-user-id'] as string | undefined) ||
-    ((req.query as any)?.user_id as string | undefined);
+  const maxInitHeader = (req.headers['x-max-init-data'] || req.headers['x-init-data']) as string | undefined;
+  const tgInitHeader = req.headers['x-telegram-init-data'] as string | undefined;
 
   let maxUserId: string | null = null;
+  let authError = 'Откройте приложение из бота в MAX';
 
-  if (initDataHeader && initDataHeader.trim() !== '') {
+  if (maxInitHeader && maxInitHeader.trim() !== '') {
     try {
-      const parsed = verifyAndParseInitData(initDataHeader);
-      maxUserId = String(parsed.user.id);
+      maxUserId = String(verifyAndParseInitData(maxInitHeader, config.botToken).user.id);
     } catch (err: any) {
-      if (mockUserHeader) {
-        maxUserId = mockUserHeader;
-      } else if (process.env.NODE_ENV !== 'production' || process.env.DEMO_MODE !== 'false') {
-        maxUserId = '1';
-      } else {
-        reply.code(401).send({ error: 'Unauthorized', message: err.message });
-        return null;
-      }
+      authError = err.message;
     }
   }
 
-  // Извлекаем пользователя из Telegram WebApp initData
-  const tgInitHeader = req.headers['x-telegram-init-data'] as string | undefined;
-  if (!maxUserId && tgInitHeader && tgInitHeader.trim() !== '') {
+  if (!maxUserId && tgInitHeader && tgInitHeader.trim() !== '' && config.telegramToken) {
     try {
-      const params = new URLSearchParams(tgInitHeader);
-      const userStr = params.get('user');
-      if (userStr) {
-        const u = JSON.parse(userStr);
-        if (u.id) maxUserId = String(u.id);
-      }
-    } catch {}
+      maxUserId = telegramUserKey(verifyAndParseInitData(tgInitHeader, config.telegramToken).user.id);
+    } catch (err: any) {
+      authError = err.message;
+    }
+  }
+
+  if (!maxUserId && isDemoToken()) {
+    const devUserId =
+      (req.headers['x-user-id'] as string | undefined) || ((req.query as any)?.user_id as string | undefined);
+    maxUserId = devUserId || '1';
   }
 
   if (!maxUserId) {
-    if (mockUserHeader) {
-      maxUserId = mockUserHeader;
-    } else if (process.env.NODE_ENV !== 'production' || process.env.DEMO_MODE !== 'false') {
-      maxUserId = '1';
-    } else {
-      reply.code(401).send({
-        error: 'Unauthorized',
-        message: 'Требуется заголовок X-Max-Init-Data / X-Telegram-Init-Data с подписью или идентификатор пользователя',
-      });
-      return null;
-    }
+    // Саму строку initData в лог не пишем: только причину отказа
+    if (maxInitHeader || tgInitHeader) console.warn(`[Auth] 401 ${req.url.split('?')[0]}: ${authError}`);
+    reply.code(401).send({ error: 'Unauthorized', message: authError });
+    return null;
   }
 
   // Получаем или создаем пользователя в БД
@@ -571,8 +557,14 @@ export function registerApiRoutes(fastify: FastifyInstance, db: Database) {
   // --- ЭНДПОИНТ ТЕСТОВОГО ВЗАИМОДЕЙСТВИЯ (КОМАНДЫ И КНОПКИ) ---
   fastify.post('/api/test/interact', async (req: FastifyRequest<{
     Body: { userId: string; action: 'command' | 'callback'; value: string };
-  }>) => {
+  }>, reply) => {
     const { userId, action, value } = req.body;
+
+    // На боевом токене playground работает только с песочницей web_user_*: иначе через него
+    // можно было бы действовать от имени настоящего пользователя MAX или Telegram
+    if (!isDemoToken() && !isPlaygroundUserKey(String(userId))) {
+      return reply.code(403).send({ error: 'Forbidden', message: 'В playground доступны только тестовые пользователи web_user_*' });
+    }
     const messages: Array<{ text: string; attachments: any[]; isEdit?: boolean }> = [];
 
     const ctx = {
@@ -600,7 +592,14 @@ export function registerApiRoutes(fastify: FastifyInstance, db: Database) {
       } else if (value === '/delete') {
         await handleDeleteCommand(ctx as any, db);
       } else if (value === '/tick') {
-        await db.query("UPDATE reminders SET send_at = NOW() - INTERVAL '1 second' WHERE status = 'pending'");
+        // Ускоряем только напоминания этого пользователя playground
+        await db.query(
+          `UPDATE reminders SET send_at = NOW() - INTERVAL '1 second'
+           WHERE status = 'pending' AND subscription_id IN (
+             SELECT s.id FROM subscriptions s JOIN users u ON u.id = s.user_id WHERE u.max_user_id = $1
+           )`,
+          [String(userId)]
+        );
         const scheduler = new ReminderScheduler(db);
         const count = await scheduler.tick();
         messages.push({

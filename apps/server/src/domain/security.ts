@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { config } from '../config.js';
+import { config, isDemoToken } from '../config.js';
 
 export interface InitDataUser {
   id: number | string;
@@ -18,9 +18,10 @@ export interface ParsedInitData {
 }
 
 /**
- * Валидация подписи initData от MAX Bridge (по стандарту HMAC-SHA256)
+ * Валидация подписи initData от MAX Bridge (по стандарту HMAC-SHA256).
+ * Telegram WebApp подписывает initData тем же алгоритмом, но своим токеном.
  * @param initDataRaw Строка параметров WebApp.initData из заголовка
- * @param botToken Токен бота MAX
+ * @param botToken Токен бота, которым подписана строка
  */
 export function verifyAndParseInitData(initDataRaw: string, botToken: string = config.botToken): ParsedInitData {
   if (!initDataRaw) {
@@ -34,8 +35,8 @@ export function verifyAndParseInitData(initDataRaw: string, botToken: string = c
     throw new Error('Отсутствует параметр hash в initData');
   }
 
-  // В dev-режиме или при тестовом токене поддерживаем тестовый обход
-  if (config.isDev && initDataRaw.startsWith('test_user_id=')) {
+  // Тестовый обход работает только с токеном-заглушкой (локальная разработка без MAX)
+  if (isDemoToken(botToken) && initDataRaw.startsWith('test_user_id=')) {
     const userId = urlParams.get('test_user_id') || '12345';
     return {
       user: { id: userId, username: 'test_dev_user' },
@@ -51,7 +52,7 @@ export function verifyAndParseInitData(initDataRaw: string, botToken: string = c
 
   Array.from(urlParams.entries())
     .filter(([key]) => key !== 'hash')
-    .sort(([a], [b]) => a.localeCompare(b))
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)) // побайтовая сортировка ключей, как в спецификации
     .forEach(([key, val]) => {
       items.push(`${key}=${val}`);
       rawObj[key] = val;
@@ -64,12 +65,10 @@ export function verifyAndParseInitData(initDataRaw: string, botToken: string = c
   const secretKey = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
   const calculatedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
 
-  if (calculatedHash !== hash) {
-    if (botToken === 'mock_token') {
-      console.warn('! [Auth] Тестовый токен: проверка HMAC пропущена для удобства тестирования');
-    } else {
-      throw new Error('Недействительная подпись initData (HMAC mismatch)');
-    }
+  const expected = Buffer.from(calculatedHash, 'hex');
+  const received = Buffer.from(hash, 'hex');
+  if (received.length !== expected.length || !crypto.timingSafeEqual(received, expected)) {
+    throw new Error('Недействительная подпись initData (HMAC mismatch)');
   }
 
   const userJson = urlParams.get('user');

@@ -1,19 +1,9 @@
-import { setGlobalDispatcher, Agent } from 'undici';
 import { getDb } from './db/index.js';
 import { setupBot } from './bot/index.js';
 import { setupTelegramBot } from './bot/telegram.js';
 import { ReminderScheduler } from './scheduler/index.js';
 import { createServer } from './api/server.js';
-import { config } from './config.js';
-
-// Поддержка российских TLS-сертификатов (Минцифры РФ) для MAX Bot API
-setGlobalDispatcher(
-  new Agent({
-    connect: {
-      rejectUnauthorized: false,
-    },
-  })
-);
+import { config, isDemoToken, webhookSecret } from './config.js';
 
 async function bootstrap() {
   console.log('==================================================');
@@ -58,7 +48,7 @@ async function bootstrap() {
 
   // 5. Запуск получения обновлений бота
   if (config.botMode === 'polling') {
-    if (config.botToken === 'mock_token' || config.botToken.startsWith('test_')) {
+    if (isDemoToken()) {
       console.log(`ℹ️ [Бот] Запущен с тестовым токеном. Используйте npm run simulator для проверки работы бота локально.`);
     } else {
       console.log(`✓ [MAX Бот] Запуск polling для получения обновлений от MAX...`);
@@ -66,8 +56,22 @@ async function bootstrap() {
         console.error('Ошибка polling MAX бота:', err.message);
       });
     }
+  } else if (isDemoToken()) {
+    console.log(`ℹ️ [Бот] Режим Webhook с тестовым токеном: подписка в MAX не создаётся.`);
   } else {
-    console.log(`✓ [MAX Бот] Работает в режиме Webhook на эндпоинте: ${config.publicUrl}/webhook`);
+    // Регистрируем вебхук в MAX: POST /subscriptions с секретом, прочие подписки снимаем
+    const webhookUrl = `${config.publicUrl.replace(/\/$/, '')}/webhook`;
+    try {
+      bot.botInfo ??= await bot.api.getMyInfo();
+      const subscriptions = await bot.api.getSubscriptions();
+      await Promise.all(
+        subscriptions.filter((s) => s.url !== webhookUrl).map((s) => bot.api.unsubscribe(s.url))
+      );
+      await bot.api.subscribe(webhookUrl, webhookSecret());
+      console.log(`✓ [MAX Бот] Вебхук зарегистрирован: ${webhookUrl}`);
+    } catch (err: any) {
+      console.error(`Не удалось зарегистрировать вебхук MAX (${webhookUrl}):`, err.message);
+    }
   }
 
   // 6. Запуск Telegram бота (если указан TELEGRAM_BOT_TOKEN)

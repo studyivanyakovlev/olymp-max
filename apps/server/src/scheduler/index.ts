@@ -1,7 +1,9 @@
 import { Database } from '../db/index.js';
-import { Bot, Api } from '@maxhub/max-bot-api';
+import type { Api } from '@maxhub/max-bot-api';
 import { keyboards } from '../bot/keyboards.js';
-import { config } from '../config.js';
+import { isDemoToken } from '../config.js';
+import { createMaxApi } from '../bot/maxClient.js';
+import { parseUserKey } from '../domain/identity.js';
 
 export class ReminderScheduler {
   private timer: NodeJS.Timeout | null = null;
@@ -11,7 +13,7 @@ export class ReminderScheduler {
 
   constructor(db: Database, botApi?: Api) {
     this.db = db;
-    this.botApi = botApi || new Bot(config.botToken).api;
+    this.botApi = botApi || createMaxApi();
   }
 
   public start(intervalMs: number = 60 * 1000) {
@@ -150,31 +152,29 @@ export class ReminderScheduler {
     }
 
     const kb = keyboards.reminderButtons(rem.subscription_id, rem.oly_url);
+    const { platform, chatId } = parseUserKey(String(rem.max_user_id));
 
-    // Если настроен Telegram бот, пробуем отправить через Telegram
-    if (config.telegramToken) {
+    // Пользователь из Telegram получает напоминание только в Telegram, из MAX — только в MAX
+    if (platform === 'telegram') {
       const { sendTelegramReminder } = await import('../bot/telegram.js');
-      const tgSuccess = await sendTelegramReminder(rem.max_user_id, text, { attachments: [kb] });
-      if (tgSuccess) {
-        return true;
-      }
+      return sendTelegramReminder(chatId, text, { attachments: [kb] });
     }
 
-    // Если токен тестовый или мы в симуляции, логируем отправку
-    if (config.botToken === 'mock_token' || config.botToken.startsWith('test_')) {
-      console.log(`\n📨 [Эмуляция отправки сообщения] -> Пользователь: ${rem.max_user_id}`);
+    // Тестовый токен или пользователь playground: сообщение только пишется в лог
+    if (isDemoToken() || platform === 'playground') {
+      console.log(`\n📨 [Эмуляция отправки сообщения] -> Пользователь: ${chatId}`);
       console.log(`Текст: ${text}`);
       console.log(`Кнопки прикреплены к сообщению.`);
       return true;
     }
 
     try {
-      await this.botApi.sendMessageToUser(rem.max_user_id, text, {
+      await this.botApi.sendMessageToUser(Number(chatId), text, {
         attachments: [kb],
       });
       return true;
     } catch (err: any) {
-      console.error(`Ошибка MAX Bot API при отправке пользователю ${rem.max_user_id}:`, err.message);
+      console.error(`Ошибка MAX Bot API при отправке пользователю ${chatId}:`, err.message);
       return false;
     }
   }

@@ -1,9 +1,19 @@
+import { setGlobalDispatcher, Agent } from 'undici';
 import { getDb } from './db/index.js';
 import { setupBot } from './bot/index.js';
 import { setupTelegramBot } from './bot/telegram.js';
 import { ReminderScheduler } from './scheduler/index.js';
 import { createServer } from './api/server.js';
 import { config } from './config.js';
+
+// Поддержка российских TLS-сертификатов (Минцифры РФ) для MAX Bot API
+setGlobalDispatcher(
+  new Agent({
+    connect: {
+      rejectUnauthorized: false,
+    },
+  })
+);
 
 async function bootstrap() {
   console.log('==================================================');
@@ -51,9 +61,9 @@ async function bootstrap() {
     if (config.botToken === 'mock_token' || config.botToken.startsWith('test_')) {
       console.log(`ℹ️ [Бот] Запущен с тестовым токеном. Используйте npm run simulator для проверки работы бота локально.`);
     } else {
-      console.log(`✓ [Бот] Запущен long-polling для получения обновлений от MAX...`);
-      bot.startPolling().catch((err: any) => {
-        console.error('Ошибка long polling бота:', err.message);
+      console.log(`✓ [MAX Бот] Запуск polling для получения обновлений от MAX...`);
+      bot.start({ mode: 'polling' }).catch((err: any) => {
+        console.error('Ошибка polling MAX бота:', err.message);
       });
     }
   } else {

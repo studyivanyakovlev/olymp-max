@@ -18,4 +18,5 @@ Thumbs.db
 *.local
 .idea/
 .vscode/
+tunnel_url.txt
 

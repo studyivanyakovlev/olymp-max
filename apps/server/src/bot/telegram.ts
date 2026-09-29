@@ -136,6 +136,30 @@ export function setupTelegramBot(db: Database): TgBot | null {
       console.warn('⚠️ Не удалось установить меню команд Telegram:', err.message);
     });
 
+  let lastRegisteredMenuUrl = '';
+  const updateMenuButton = async () => {
+    const currentUrl = config.miniappUrl;
+    if (currentUrl && currentUrl.startsWith('https://') && currentUrl !== lastRegisteredMenuUrl) {
+      try {
+        await bot.api.setChatMenuButton({
+          menu_button: {
+            type: 'web_app',
+            text: '🏆 Mini App',
+            web_app: { url: currentUrl },
+          },
+        });
+        lastRegisteredMenuUrl = currentUrl;
+        console.log(`✅ Telegram Chat Menu Button синхронизирована: ${currentUrl}`);
+      } catch (err: any) {
+        console.warn('⚠️ Не удалось установить кнопку меню Telegram:', err.message);
+      }
+    }
+  };
+
+  updateMenuButton();
+  const menuInterval = setInterval(updateMenuButton, 15000);
+  if (menuInterval.unref) menuInterval.unref();
+
   const handleAppCommand = async (ctx: any) => {
     const userId = String(ctx.from?.id || ctx.chat?.id || '');
     const baseUrl = config.miniappUrl || `http://localhost:${config.port}/app`;

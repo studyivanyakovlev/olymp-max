@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Олимпиадный навигатор — Каталог и личный кабинет</title>
   
-  <!-- Telegram WebApp SDK -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -921,11 +918,11 @@
       </div>
       <div class="modal-body">
         <p style="font-size: 0.85rem; color: var(--text-muted);">
-          В Telegram WebApp ваш ID определяется автоматически. В браузере вы можете переключаться между пользователями или ввести свой Telegram ID:
+          В MAX ваш ID определяется автоматически. В браузере для проверки можно переключаться между тестовыми пользователями:
         </p>
         <div>
           <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">ID пользователя:</label>
-          <input type="text" id="customUserIdInput" class="modal-user-input" placeholder="Например: 1 или ваш Telegram ID">
+          <input type="text" id="customUserIdInput" class="modal-user-input" placeholder="Например: 1">
         </div>
       </div>
       <div class="modal-footer">
@@ -969,22 +966,9 @@
     let catalogFilters = { subject: '', level: '', search: '' };
     let subFilter = 'all';
 
-    // --- ИНИЦИАЛИЗАЦИЯ ТЕЛЕГРАМ / СРЕДЫ ---
+    // --- ИНИЦИАЛИЗАЦИЯ СРЕДЫ ---
     (function initEnvironment() {
-      // 1. Проверяем Telegram WebApp
-      if (window.Telegram?.WebApp) {
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
-        if (tg.initData) {
-          initData = tg.initData;
-        }
-        if (tg.initDataUnsafe?.user?.id) {
-          currentUserId = String(tg.initDataUnsafe.user.id);
-        }
-      }
-
-      // 2. Проверяем параметры URL (?user_id=...)
+      // Параметры URL (?user_id=...) — только для локальной проверки с тестовым токеном
       const urlParams = new URLSearchParams(window.location.search);
       const qUserId = urlParams.get('user_id');
       if (qUserId) {

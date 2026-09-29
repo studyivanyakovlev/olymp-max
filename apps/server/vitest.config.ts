@@ -7,7 +7,6 @@ export default defineConfig({
     env: {
       NODE_ENV: 'test',
       BOT_TOKEN: 'test_bot_token',
-      TELEGRAM_BOT_TOKEN: 'telegram_test_token',
       DATABASE_URL: '',
       BOT_MODE: 'polling',
       DEMO_MODE: 'true',

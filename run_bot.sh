@@ -1,5 +1,5 @@
 #!/bin/bash
-# Скрипт фонового запуска ботов (MAX и Telegram) и публичного HTTPS-туннеля для Mini App
+# Скрипт фонового запуска бота MAX и публичного HTTPS-туннеля для Mini App
 set -e
 cd "$(dirname "$0")"
 
@@ -49,7 +49,7 @@ fi
 # 4. Запуск сервера и ботов
 BOT_LOG="/tmp/olymp-bot.log"
 rm -f "$BOT_LOG"
-echo "[*] Запуск сервиса (Node.js, MAX и Telegram боты)..."
+echo "[*] Запуск сервиса (Node.js, бот MAX)..."
 node apps/server/dist/index.js >> "$BOT_LOG" 2>&1 &
 SERVER_PID=$!
 
@@ -63,7 +63,6 @@ fi
 
 echo "=========================================================="
 echo "🎉 Сервисы успешно запущены!"
-[ -n "$TELEGRAM_BOT_TOKEN" ] && echo "🤖 Telegram бот: @olymp_pilot_test_bot"
 [ -n "$BOT_TOKEN" ] && echo "💬 MAX бот: подключен (Олимпиады.ру)"
 echo "🌐 Локальный API:     http://localhost:$PORT"
 echo "📱 Mini App локально: http://localhost:$PORT/app"

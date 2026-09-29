@@ -10,15 +10,13 @@ import type {
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const userId = getUserId();
   const maxInit = initData();
-  const tgInit = (window as any).Telegram?.WebApp?.initData || '';
 
   // Сервер узнаёт пользователя по подписанному initData. X-User-Id нужен только
   // для локальной разработки без MAX: боевой сервер его не принимает.
-  const signed = Boolean(maxInit || tgInit);
+  const signed = Boolean(maxInit);
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(maxInit ? { 'X-Max-Init-Data': maxInit } : {}),
-    ...(tgInit ? { 'X-Telegram-Init-Data': tgInit } : {}),
     ...(!signed && userId ? { 'X-User-Id': userId } : {}),
     ...((options.headers as any) || {}),
   };

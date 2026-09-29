@@ -9,20 +9,6 @@
     <meta name="theme-color" content="#f4f5f7" />
     <title>Олимпиадный навигатор</title>
     <script src="https://st.max.ru/js/max-web-app.js"></script>
-    <script>
-      // Скрипт Telegram нужен только внутри Telegram: там в адресе есть параметры tgWebApp.
-      // Синхронно его не грузим — в российских мобильных сетях telegram.org отвечает
-      // медленно, и в MAX страница висела по 20–30 секунд.
-      window.__tgReady = /tgWebApp/.test(location.hash + location.search)
-        ? new Promise(function (resolve) {
-            var s = document.createElement('script');
-            s.src = 'https://telegram.org/js/telegram-web-app.js';
-            s.onload = s.onerror = function () { resolve(); };
-            document.head.appendChild(s);
-            setTimeout(resolve, 4000);
-          })
-        : Promise.resolve();
-    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

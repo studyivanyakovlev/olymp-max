@@ -19,7 +19,6 @@ export interface ParsedInitData {
 
 /**
  * Валидация подписи initData от MAX Bridge (по стандарту HMAC-SHA256).
- * Telegram WebApp подписывает initData тем же алгоритмом, но своим токеном.
  * @param initDataRaw Строка параметров WebApp.initData из заголовка
  * @param botToken Токен бота, которым подписана строка
  */

@@ -12,17 +12,6 @@ update_url() {
   local URL="$1"
   echo "[✓] Established tunnel: $URL"
   echo "$URL" > tunnel_url.txt
-  if [ -n "$TELEGRAM_BOT_TOKEN" ]; then
-    local res
-    res=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setChatMenuButton" \
-      -H "Content-Type: application/json" \
-      -d "{\"menu_button\":{\"type\":\"web_app\",\"text\":\"🏆 Mini App\",\"web_app\":{\"url\":\"${URL}/app\"}}}")
-    if echo "$res" | grep -q '"ok":true'; then
-      echo "[✓] Telegram Menu Button успешно настроена на $URL/app"
-    else
-      echo "[-] Ответ Telegram API: $res"
-    fi
-  fi
 }
 
 while true; do

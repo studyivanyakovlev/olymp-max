@@ -21,17 +21,6 @@ async function boot() {
     }
   } catch {}
 
-  // Внутри Telegram ждём его скрипт (грузится из index.html только там), в MAX промис уже выполнен
-  await (window as any).__tgReady;
-
-  try {
-    const tg = (window as any).Telegram?.WebApp;
-    if (tg) {
-      tg.ready();
-      tg.expand();
-    }
-  } catch {}
-
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
       <MaxUI colorScheme="light">

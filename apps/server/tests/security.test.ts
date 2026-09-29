@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import Fastify, { FastifyInstance } from 'fastify';
 import { config } from '../src/config.js';
 import { verifyAndParseInitData } from '../src/domain/security.js';
-import { parseUserKey, telegramUserKey } from '../src/domain/identity.js';
+import { parseUserKey } from '../src/domain/identity.js';
 import { registerApiRoutes } from '../src/api/routes.js';
 import { getDb, Database } from '../src/db/index.js';
 
@@ -35,10 +35,8 @@ describe('5. initData: без обходов проверки подписи', (
   });
 });
 
-describe('6. ID пользователей MAX и Telegram не пересекаются', () => {
-  it('ID Telegram хранится с префиксом и отправляется в Telegram', () => {
-    expect(telegramUserKey(123)).toBe('tg_123');
-    expect(parseUserKey('tg_123')).toEqual({ platform: 'telegram', chatId: '123' });
+describe('6. Пользователи playground отделены от пользователей MAX', () => {
+  it('Песочница web_user_* распознаётся, остальные ID — пользователи MAX', () => {
     expect(parseUserKey('123')).toEqual({ platform: 'max', chatId: '123' });
     expect(parseUserKey('web_user_4242').platform).toBe('playground');
   });
@@ -87,16 +85,6 @@ describe('7. REST API: пользователь определяется тол�
     expect(res.json().max_user_id).toBe('5001');
   });
 
-  it('initData Telegram проверяется токеном Telegram и получает префикс tg_', async () => {
-    config.botToken = 'real_bot_token';
-    const ok = await me({ 'x-telegram-init-data': signInitData(config.telegramToken, 5001) });
-    expect(ok.statusCode).toBe(200);
-    expect(ok.json().max_user_id).toBe('tg_5001');
-
-    const forged = await me({ 'x-telegram-init-data': signInitData('attacker_token', 5001) });
-    expect(forged.statusCode).toBe(401);
-  });
-
   it('Токен-заглушка: для локальной разработки работает X-User-Id', async () => {
     const res = await me({ 'x-user-id': 'dev_user' });
     expect(res.statusCode).toBe(200);
@@ -108,7 +96,6 @@ describe('7. REST API: пользователь определяется тол�
     const interact = (userId: string) =>
       app.inject({ method: 'POST', url: '/api/test/interact', payload: { userId, action: 'command', value: '/my' } });
     expect((await interact('5001')).statusCode).toBe(403);
-    expect((await interact('tg_5001')).statusCode).toBe(403);
     expect((await interact('web_user_1234')).statusCode).toBe(200);
   });
 });

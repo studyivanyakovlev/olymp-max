@@ -1,6 +1,5 @@
 import { getDb } from './db/index.js';
 import { setupBot } from './bot/index.js';
-import { setupTelegramBot } from './bot/telegram.js';
 import { ReminderScheduler } from './scheduler/index.js';
 import { createServer } from './api/server.js';
 import { config, isDemoToken, webhookSecret } from './config.js';
@@ -75,22 +74,10 @@ async function bootstrap() {
     }
   }
 
-  // 6. Запуск Telegram бота (если указан TELEGRAM_BOT_TOKEN)
-  const tgBot = setupTelegramBot(db);
-  if (tgBot) {
-    console.log(`✓ [Telegram] Бот подключен и запускает polling...`);
-    tgBot.start().catch((err: any) => {
-      console.error('Ошибка Telegram бота:', err.message);
-    });
-  } else {
-    console.log(`ℹ️ [Telegram] Токен не указан (TELEGRAM_BOT_TOKEN). Для тестирования в Telegram укажите его в .env`);
-  }
-
   // Graceful shutdown
   const shutdown = async () => {
     console.log('\nОстановка сервисов...');
     scheduler.stop();
-    if (tgBot) tgBot.stop();
     await server.close();
     await db.close();
     process.exit(0);

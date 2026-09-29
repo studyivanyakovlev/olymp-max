@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { Database } from '../db/index.js';
 import { verifyAndParseInitData } from '../domain/security.js';
-import { telegramUserKey, isPlaygroundUserKey } from '../domain/identity.js';
+import { isPlaygroundUserKey } from '../domain/identity.js';
 import { config, isDemoToken } from '../config.js';
 import { generateRemindersForSubscription, handleReminderAction } from '../domain/reminders.js';
 import { getRecommendationsForUser } from '../domain/recommendations.js';
@@ -54,13 +54,11 @@ export const RUSSIAN_TO_CODE: Record<string, string> = {
   'Английский язык': 'english',
 };
 
-// Извлечение пользователя из подписанного initData.
-// MAX Bridge присылает WebApp.initData в X-Max-Init-Data, Telegram WebApp — в X-Telegram-Init-Data.
+// Извлечение пользователя из подписанного initData: MAX Bridge присылает WebApp.initData в X-Max-Init-Data.
 // Без подписи пользователь определяется по X-User-Id только с токеном-заглушкой:
 // так работают playground и локальная разработка, а на боевом токене подменить ID нельзя.
 async function authenticateUser(req: FastifyRequest, reply: FastifyReply, db: Database): Promise<any> {
   const maxInitHeader = (req.headers['x-max-init-data'] || req.headers['x-init-data']) as string | undefined;
-  const tgInitHeader = req.headers['x-telegram-init-data'] as string | undefined;
 
   let maxUserId: string | null = null;
   let authError = 'Откройте приложение из бота в MAX';
@@ -68,14 +66,6 @@ async function authenticateUser(req: FastifyRequest, reply: FastifyReply, db: Da
   if (maxInitHeader && maxInitHeader.trim() !== '') {
     try {
       maxUserId = String(verifyAndParseInitData(maxInitHeader, config.botToken).user.id);
-    } catch (err: any) {
-      authError = err.message;
-    }
-  }
-
-  if (!maxUserId && tgInitHeader && tgInitHeader.trim() !== '' && config.telegramToken) {
-    try {
-      maxUserId = telegramUserKey(verifyAndParseInitData(tgInitHeader, config.telegramToken).user.id);
     } catch (err: any) {
       authError = err.message;
     }
@@ -89,7 +79,7 @@ async function authenticateUser(req: FastifyRequest, reply: FastifyReply, db: Da
 
   if (!maxUserId) {
     // Саму строку initData в лог не пишем: только причину отказа
-    if (maxInitHeader || tgInitHeader) console.warn(`[Auth] 401 ${req.url.split('?')[0]}: ${authError}`);
+    if (maxInitHeader) console.warn(`[Auth] 401 ${req.url.split('?')[0]}: ${authError}`);
     reply.code(401).send({ error: 'Unauthorized', message: authError });
     return null;
   }
@@ -561,7 +551,7 @@ export function registerApiRoutes(fastify: FastifyInstance, db: Database) {
     const { userId, action, value } = req.body;
 
     // На боевом токене playground работает только с песочницей web_user_*: иначе через него
-    // можно было бы действовать от имени настоящего пользователя MAX или Telegram
+    // можно было бы действовать от имени настоящего пользователя MAX
     if (!isDemoToken() && !isPlaygroundUserKey(String(userId))) {
       return reply.code(403).send({ error: 'Forbidden', message: 'В playground доступны только тестовые пользователи web_user_*' });
     }

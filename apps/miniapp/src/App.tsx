@@ -231,9 +231,7 @@ function Layout() {
   }, [location.pathname, location.search, navigate]);
 
   useEffect(() => {
-    const backButton = bridge()?.initData
-      ? bridge()?.BackButton
-      : (window as any).Telegram?.WebApp?.BackButton;
+    const backButton = bridge()?.initData ? bridge()?.BackButton : undefined;
     if (!backButton) return;
     const goBack = () => navigate('/');
     const shouldShow =

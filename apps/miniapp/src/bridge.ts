@@ -40,15 +40,6 @@ export function getUserId(): string {
   } catch {}
 
   try {
-    const tgUser = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id;
-    if (tgUser) {
-      const s = String(tgUser);
-      localStorage.setItem('olymp_user_id', s);
-      return s;
-    }
-  } catch {}
-
-  try {
     const maxUser = (window as any).WebApp?.initDataUnsafe?.user?.id;
     if (maxUser) {
       const s = String(maxUser);

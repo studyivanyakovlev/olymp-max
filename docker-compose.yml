@@ -16,7 +16,6 @@ services:
       - NODE_ENV=production
       - BOT_TOKEN=${BOT_TOKEN:-}
       - BOT_USERNAME=${BOT_USERNAME:-}
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
       - BOT_MODE=${BOT_MODE:-polling}
       - PUBLIC_URL=${PUBLIC_URL:-}
       - WEBHOOK_SECRET=${WEBHOOK_SECRET:-}

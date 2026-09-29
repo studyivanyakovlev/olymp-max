@@ -22,7 +22,6 @@ export async function createServer(db: Database, bot?: Bot): Promise<FastifyInst
       'Authorization',
       'x-init-data',
       'x-max-init-data',
-      'x-telegram-init-data',
       'x-user-id',
     ],
   });

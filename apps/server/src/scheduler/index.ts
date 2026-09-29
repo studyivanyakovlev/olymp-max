@@ -123,12 +123,6 @@ export class ReminderScheduler {
     const kb = keyboards.reminderButtons(rem.subscription_id, rem.oly_url);
     const { platform, chatId } = parseUserKey(String(rem.max_user_id));
 
-    // Пользователь из Telegram получает напоминание только в Telegram, из MAX — только в MAX
-    if (platform === 'telegram') {
-      const { sendTelegramReminder } = await import('../bot/telegram.js');
-      return sendTelegramReminder(chatId, text, { attachments: [kb] });
-    }
-
     // Тестовый токен или пользователь playground: сообщение только пишется в лог
     if (isDemoToken() || platform === 'playground') {
       console.log(`\n📨 [Эмуляция отправки сообщения] -> Пользователь: ${chatId}`);

@@ -38,8 +38,11 @@ export async function getDb(): Promise<Database> {
 
       const db: Database = {
         async query<T = any>(sql: string, params?: any[]): Promise<QueryResult<T>> {
-          const res = await pool.query(sql, params);
-          return { rows: res.rows, rowCount: res.rowCount ?? res.rows.length };
+          const out: any = await pool.query(sql, params);
+          // Запрос из нескольких команд (схема в migrations.ts) pg возвращает массивом результатов
+          const res = Array.isArray(out) ? out[out.length - 1] : out;
+          const rows = res?.rows ?? [];
+          return { rows, rowCount: res?.rowCount ?? rows.length };
         },
         async close() {
           await pool.end();

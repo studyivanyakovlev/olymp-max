@@ -30,7 +30,7 @@ export async function createServer(db: Database, bot?: Bot): Promise<FastifyInst
   await fastify.register(swagger, {
     openapi: {
       info: {
-        title: 'Олимпиадный навигатор в MAX API',
+        title: 'Олимпиадный навигатор — API',
         description: 'REST API бэкенда для взаимодействия с Mini App и платформой MAX',
         version: '1.0.0',
       },

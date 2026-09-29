@@ -6,7 +6,7 @@ import { config, isDemoToken, webhookSecret } from './config.js';
 
 async function bootstrap() {
   console.log('==================================================');
-  console.log('🚀 Запуск сервиса «Олимпиадный навигатор в MAX»');
+  console.log('🚀 Запуск сервиса «Олимпиадный навигатор»');
   console.log(`   Режим: ${config.isDev ? 'DEVELOPMENT' : 'PRODUCTION'}`);
   console.log(`   Режим бота: ${config.botMode.toUpperCase()}`);
   console.log(`   Демо-режим жюри: ${config.demoMode ? 'ВКЛЮЧЕН' : 'ВЫКЛЮЧЕН'}`);

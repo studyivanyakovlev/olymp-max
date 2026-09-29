@@ -89,6 +89,16 @@ function deadline(item: Olympiad) {
   const time = upcoming ?? ends[ends.length - 1];
   return time === undefined ? undefined : new Date(time).toISOString();
 }
+// Как в подборке бота: участвовать ещё можно, то есть регистрация не закрыта и не все этапы прошли.
+// Демо-олимпиада для жюри показывается всегда.
+function isStillOpen(item: Olympiad) {
+  if (item.is_demo) return true;
+  const now = Date.now();
+  const end = (stage: Stage) => new Date(stage.ends_at ?? stage.starts_at).getTime();
+  const registrations = item.stages.filter((stage) => stage.kind === 'registration');
+  if (registrations.length > 0 && registrations.every((stage) => end(stage) < now)) return false;
+  return item.stages.some((stage) => end(stage) >= now);
+}
 function byStageDate(a: Stage, b: Stage) {
   const end = (stage: Stage) => new Date(stage.ends_at ?? stage.starts_at).getTime();
   return new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime() || end(a) - end(b);
@@ -372,6 +382,9 @@ function Catalog() {
       const uSubs = profile.subjects || [];
 
       items = items.filter((item) => {
+        if (!isStillOpen(item)) {
+          return false;
+        }
         if (uGrade && (uGrade < item.grade_from || uGrade > item.grade_to)) {
           return false;
         }

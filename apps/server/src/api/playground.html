@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MAX Bot Playground — Олимпиадный навигатор</title>
+  <link rel="icon" type="image/png" href="/assets/app-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -135,12 +136,17 @@
     .avatar {
       width: 42px;
       height: 42px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.2rem;
+      border-radius: 12px;
+      flex-shrink: 0;
+      display: block;
+      background: #7660ee;
+    }
+    .sidebar-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      vertical-align: -6px;
+      margin-right: 6px;
     }
 
     .chat-title h1 {
@@ -289,7 +295,7 @@
 
   <!-- Левая панель с быстрыми действиями -->
   <aside class="sidebar">
-    <h2>🏆 MAX Навигатор <span class="badge">Playground</span></h2>
+    <h2><img class="sidebar-icon" src="/assets/app-icon.png" alt="">Олимпиадный навигатор <span class="badge">Playground</span></h2>
     <p>Интерактивная среда для проверки поведения чат-бота и напоминаний прямо в браузере.</p>
 
     <div class="quick-actions">
@@ -328,7 +334,7 @@
   <!-- Окно чата -->
   <main class="chat-container">
     <header class="chat-header">
-      <div class="avatar">🤖</div>
+      <img class="avatar" src="/assets/app-icon.png" alt="">
       <div class="chat-title">
         <h1>Олимпиадный навигатор</h1>
         <span>● Онлайн (Симулятор)</span>

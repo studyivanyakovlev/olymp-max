@@ -12,7 +12,12 @@ export interface QuietHoursConfig {
  */
 export function adjustForQuietHours(date: Date, config: QuietHoursConfig = { timezone: 'Europe/Moscow', quietFrom: '22:00', quietTo: '08:00' }): Date {
   const result = new Date(date.getTime());
-  
+
+  // «Круглосуточно (без ограничений)» в настройках: начало и конец тихих часов совпадают
+  if ((config.quietFrom || '22:00') === (config.quietTo || '08:00')) {
+    return result;
+  }
+
   // Получаем локальные часы и минуты в целевом часовом поясе
   const formatter = new Intl.DateTimeFormat('en-US', {
     timeZone: config.timezone || 'Europe/Moscow',
@@ -133,11 +138,14 @@ export async function generateRemindersForSubscription(
       // Сдвигаем в активное окно
       const sendAt = adjustForQuietHours(cand.targetDate, userConfig);
 
-      // Вставляем с защитой от дублей (Правило 7)
+      // Вставляем с защитой от дублей (Правило 7). Напоминания, отменённые отпиской,
+      // при повторной подписке снова ставятся в очередь; отправленные не повторяются.
       const res = await db.query(
         `INSERT INTO reminders (subscription_id, stage_id, kind, send_at, status)
          VALUES ($1, $2, $3, $4, 'pending')
-         ON CONFLICT (subscription_id, stage_id, kind) DO NOTHING`,
+         ON CONFLICT (subscription_id, stage_id, kind) DO UPDATE SET
+           send_at = EXCLUDED.send_at, status = 'pending', attempts = 0, updated_at = NOW()
+         WHERE reminders.status = 'cancelled'`,
         [subscriptionId, stage.id, cand.kind, sendAt.toISOString()]
       );
 

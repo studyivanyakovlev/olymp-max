@@ -1,6 +1,7 @@
 import { Database } from '../db/index.js';
 import { keyboards, getSubjectTitle, getRegionTitle } from './keyboards.js';
-import { getRecommendationsForUser } from '../domain/recommendations.js';
+import { getRecommendationsForUser, pickNextDeadline, NextDeadline, StageRow } from '../domain/recommendations.js';
+import { formatDay, formatDeadline, formatRange } from '../domain/dates.js';
 import { generateRemindersForSubscription, handleReminderAction } from '../domain/reminders.js';
 import { config } from '../config.js';
 
@@ -13,6 +14,17 @@ export interface BotContextLike {
   reply(text: string, extra?: any): Promise<any>;
   editMessageText?(text: string, extra?: any): Promise<any>;
   answerOnCallback?(extra?: any): Promise<any>;
+}
+
+// Строка с ближайшим дедлайном для карточки олимпиады
+export function deadlineLine(next: NextDeadline | null | undefined): string | null {
+  if (!next) return null;
+  if (next.kind === 'registration') {
+    return next.is_open
+      ? `⏰ ${next.stage_name} — до ${formatDeadline(next.ends_at)}`
+      : `🗓 ${next.stage_name} — откроется ${formatDay(next.starts_at)}`;
+  }
+  return `📝 ${next.stage_name} — ${formatRange(next.starts_at, next.ends_at)}`;
 }
 
 // Получение или создание пользователя в базе данных
@@ -52,7 +64,7 @@ export async function handleStartCommand(ctx: BotContextLike, db: Database) {
 
   const welcomeText =
     `👋 Привет! Я — Олимпиадный навигатор в MAX.\n\n` +
-    `Моя цель — не дать тебе пропустить регистрацию на олимпиады из Перечня РСОШ и этапы ВсОШ, которые дают БВИ или 100 баллов ЕГЭ.\n\n` +
+    `Моя цель — не дать тебе пропустить регистрацию и туры олимпиад из Перечня РСОШ: их дипломы дают льготы при поступлении — БВИ или 100 баллов ЕГЭ.\n\n` +
     `🔒 О приватности: мы храним только твой класс, предметы и регион. Никаких ФИО и телефонов. Удалить данные можно в любой момент командой /delete.\n\n` +
     `Давай настроим твою персональную подборку за 3 шага:\n` +
     `1️⃣ В каком ты классе?`;
@@ -107,16 +119,30 @@ export async function handleMyCommand(ctx: BotContextLike, db: Database) {
     return;
   }
 
+  const stagesRes = await db.query<StageRow>(
+    `SELECT st.olympiad_id, st.kind, st.name, st.starts_at, st.ends_at
+     FROM stages st
+     JOIN subscriptions s ON s.olympiad_id = st.olympiad_id
+     WHERE s.user_id = $1 AND s.status != 'dropped'`,
+    [user.id]
+  );
+  const tz = user.timezone || 'Europe/Moscow';
+
   let text = `📅 Твои олимпиады и ближайшие дедлайны:\n\n`;
   for (const row of subsRes.rows) {
     const statusIcon = row.status === 'registered' ? '✅ Зарегистрирован' : '⏳ В планах';
-    const nextDate = row.next_reminder
-      ? new Date(row.next_reminder).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })
-      : 'дедлайны скоро появятся';
+    // Тем, кто уже зарегистрировался, важен ближайший тур, а не регистрация
+    const { next } = pickNextDeadline(
+      stagesRes.rows.filter(st => st.olympiad_id === row.oly_id),
+      new Date(),
+      { skipRegistration: row.status === 'registered' }
+    );
+    const reminder = row.next_reminder ? formatDeadline(row.next_reminder, tz) : 'нет запланированных';
 
     text += `🏆 ${row.title}\n`;
     text += `   • Статус: ${statusIcon}\n`;
-    text += `   • Ближайшее напоминание: ${nextDate}\n\n`;
+    text += `   • ${deadlineLine(next) ?? 'Все этапы уже прошли'}\n`;
+    text += `   • Ближайшее напоминание: ${reminder}\n\n`;
   }
 
   await ctx.reply(text, {
@@ -553,13 +579,15 @@ async function sendRecommendationsList(ctx: BotContextLike, db: Database, userId
   }
 
   for (const item of list) {
-    const levelStr = item.rsosh_level ? `Уровень РСОШ: ${item.rsosh_level}` : 'ВсОШ / Гос. перечень';
+    const levelStr = item.rsosh_level ? `Уровень РСОШ: ${item.rsosh_level}` : 'Не входит в Перечень РСОШ';
     const demoBadge = item.is_demo ? '⚡ [ДЕМО ДЛЯ ЖЮРИ] ' : '';
+    const deadline = deadlineLine(item.next_deadline);
     const text =
       `${demoBadge}🏆 ${item.title}\n` +
       `🏢 Организатор: ${item.organizer}\n` +
-      `🎓 ${levelStr} | Классы: ${item.grade_from}–${item.grade_to}\n` +
-      `🎁 Льгота: ${item.benefits_note || 'БВИ / 100 баллов'}`;
+      `🎓 ${levelStr} | Классы: ${item.grade_from}–${item.grade_to}` +
+      (deadline ? `\n${deadline}` : '') +
+      (item.benefits_note ? `\n🎁 Льгота: ${item.benefits_note}` : '');
 
     // Проверяем, подписан ли уже
     const subCheck = await db.query(

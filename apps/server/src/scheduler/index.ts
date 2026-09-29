@@ -4,6 +4,7 @@ import { keyboards } from '../bot/keyboards.js';
 import { isDemoToken } from '../config.js';
 import { createMaxApi } from '../bot/maxClient.js';
 import { parseUserKey } from '../domain/identity.js';
+import { formatDeadline, formatRange } from '../domain/dates.js';
 
 export class ReminderScheduler {
   private timer: NodeJS.Timeout | null = null;
@@ -49,7 +50,8 @@ export class ReminderScheduler {
     const selectQuery = this.db.isPGlite
       ? `SELECT r.id, r.subscription_id, r.stage_id, r.kind, r.send_at, r.attempts,
                 s.user_id, s.olympiad_id, s.status as sub_status,
-                u.max_user_id, o.title as oly_title, o.url as oly_url, st.name as stage_name
+                u.max_user_id, u.timezone, o.title as oly_title, o.url as oly_url, o.rsosh_level,
+                st.name as stage_name, st.starts_at as stage_starts_at, st.ends_at as stage_ends_at
          FROM reminders r
          JOIN subscriptions s ON s.id = r.subscription_id
          JOIN users u ON u.id = s.user_id
@@ -60,7 +62,8 @@ export class ReminderScheduler {
          LIMIT 50`
       : `SELECT r.id, r.subscription_id, r.stage_id, r.kind, r.send_at, r.attempts,
                 s.user_id, s.olympiad_id, s.status as sub_status,
-                u.max_user_id, o.title as oly_title, o.url as oly_url, st.name as stage_name
+                u.max_user_id, u.timezone, o.title as oly_title, o.url as oly_url, o.rsosh_level,
+                st.name as stage_name, st.starts_at as stage_starts_at, st.ends_at as stage_ends_at
          FROM reminders r
          JOIN subscriptions s ON s.id = r.subscription_id
          JOIN users u ON u.id = s.user_id
@@ -116,41 +119,7 @@ export class ReminderScheduler {
   }
 
   private async sendSingleReminder(rem: any): Promise<boolean> {
-    const isDemo = rem.kind === 'demo_1m';
-    let text = '';
-
-    if (isDemo) {
-      text =
-        `⚡ [ДЕМО ДЛЯ ЖЮРИ] Напоминание по олимпиаде!\n\n` +
-        `🏆 «${rem.oly_title}»\n` +
-        `📌 Этап: ${rem.stage_name}\n\n` +
-        `Это демонстрационное напоминание, настроенное на срабатывание через 1 минуту после оформления подписки. Нажмите «Зарегистрировался» или используйте другие кнопки:`;
-    } else if (rem.kind === 'reg_start') {
-      text =
-        `🔔 Регистрация открыта!\n\n` +
-        `🏆 Олимпиада: «${rem.oly_title}»\n` +
-        `Регистрация на этап «${rem.stage_name}» уже началась. Успей подать заявку!`;
-    } else if (rem.kind === 'reg_3d') {
-      text =
-        `⏳ До окончания регистрации осталось 3 дня!\n\n` +
-        `🏆 Олимпиада: «${rem.oly_title}»\n` +
-        `Не упусти шанс получить льготу БВИ или 100 баллов!`;
-    } else if (rem.kind === 'reg_1d') {
-      text =
-        `🚨 Последний день регистрации!\n\n` +
-        `🏆 Олимпиада: «${rem.oly_title}»\n` +
-        `Регистрация на «${rem.stage_name}» закрывается сегодня! Подай заявку прямо сейчас:`;
-    } else if (rem.kind === 'stage_1d') {
-      text =
-        `📝 Завтра начинается тур олимпиады!\n\n` +
-        `🏆 «${rem.oly_title}»\n` +
-        `Этап: ${rem.stage_name}\nПроверь доступ в личный кабинет и подготовь черновики!`;
-    } else {
-      text =
-        `⏰ Напоминание по олимпиаде «${rem.oly_title}»:\n` +
-        `Этап: ${rem.stage_name}`;
-    }
-
+    const text = buildReminderText(rem);
     const kb = keyboards.reminderButtons(rem.subscription_id, rem.oly_url);
     const { platform, chatId } = parseUserKey(String(rem.max_user_id));
 
@@ -177,5 +146,48 @@ export class ReminderScheduler {
       console.error(`Ошибка MAX Bot API при отправке пользователю ${chatId}:`, err.message);
       return false;
     }
+  }
+}
+
+/** Текст напоминания: что за этап и до какой даты действовать */
+export function buildReminderText(rem: any): string {
+  const tz = rem.timezone || 'Europe/Moscow';
+  const title = `🏆 «${rem.oly_title}»`;
+  const stage = `📌 ${rem.stage_name}`;
+  const deadline = rem.stage_ends_at ? formatDeadline(rem.stage_ends_at, tz) : null;
+  const tourDates =
+    rem.stage_starts_at && rem.stage_ends_at ? formatRange(rem.stage_starts_at, rem.stage_ends_at, tz) : null;
+
+  const lines = (header: string, ...body: Array<string | null | false>) =>
+    [header, '', title, stage, ...body.filter((line): line is string => typeof line === 'string')].join('\n');
+
+  switch (rem.kind) {
+    case 'demo_1m':
+      return lines(
+        '⚡ [ДЕМО ДЛЯ ЖЮРИ] Напоминание по олимпиаде!',
+        deadline && `🗓 Регистрация до ${deadline}`,
+        '',
+        'Это демонстрационное напоминание: оно приходит через 1 минуту после подписки. ' +
+          'Нажмите «Зарегистрировался» или используйте другие кнопки:'
+      );
+    case 'reg_start':
+      return lines('🔔 Регистрация открыта!', `🗓 Подать заявку можно до ${deadline}. Не откладывай!`);
+    case 'reg_3d':
+      return lines(
+        '⏳ До конца регистрации 3 дня',
+        `🗓 Регистрация закрывается ${deadline}.`,
+        rem.rsosh_level &&
+          `Олимпиада из Перечня РСОШ (${rem.rsosh_level} уровень): диплом может дать льготу при поступлении.`
+      );
+    case 'reg_1d':
+      return lines('🚨 Последний день регистрации!', `🗓 Регистрация закрывается ${deadline}. Подай заявку прямо сейчас:`);
+    case 'stage_1d':
+      return lines(
+        '📝 Завтра начинается тур олимпиады!',
+        `🗓 Даты тура: ${tourDates}`,
+        'Проверь доступ в личный кабинет и подготовь черновики!'
+      );
+    default:
+      return lines('⏰ Напоминание по олимпиаде', tourDates && `🗓 ${tourDates}`);
   }
 }

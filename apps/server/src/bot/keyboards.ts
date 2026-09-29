@@ -1,5 +1,5 @@
 import { Keyboard } from '@maxhub/max-bot-api';
-import { config } from '../config.js';
+import { config, isDemoToken } from '../config.js';
 
 export const SUBJECT_OPTIONS = [
   { code: 'informatics', title: '💻 Информатика' },
@@ -30,6 +30,30 @@ export function getRegionTitle(code: string | null | undefined): string {
   const item = REGION_OPTIONS.find(r => r.code === code);
   return item ? item.title : code;
 }
+
+// Кнопка open_app открывает мини-приложение бота: MAX ищет его по нику бота (web_app)
+// или по ID бота (contact_id). Ник берём из GET /me при старте, BOT_USERNAME — запасной вариант.
+// payload попадает в initData как start_param: по нему Mini App сразу открывает карточку олимпиады.
+const miniAppBot: { username: string | null; userId: number | null } = {
+  username: process.env.BOT_USERNAME || null,
+  userId: null,
+};
+
+export function setMiniAppBot(info: { username?: string | null; user_id?: number | null }) {
+  if (info.username) miniAppBot.username = info.username;
+  if (info.user_id) miniAppBot.userId = info.user_id;
+}
+
+function openAppButton(text: string, startParam?: string) {
+  if (miniAppBot.username) return Keyboard.button.openApp(text, miniAppBot.username, undefined, startParam);
+  if (miniAppBot.userId || isDemoToken()) {
+    return { type: 'open_app' as const, text, contact_id: miniAppBot.userId, payload: startParam ?? null };
+  }
+  // Бот ещё не знает свой ник: без кнопки сообщение всё равно отправится, а с неполной MAX его отклонит
+  return null;
+}
+
+const compact = <T,>(row: Array<T | null>): T[] => row.filter((button): button is T => button !== null);
 
 export const keyboards = {
   // Меню настроек
@@ -205,10 +229,10 @@ export const keyboards = {
         Keyboard.button.callback('🎯 Персональная подборка', 'menu:recommendations'),
         Keyboard.button.callback('📅 Мои дедлайны', 'menu:deadlines'),
       ],
-      [
-        Keyboard.button.openApp('🚀 Каталог в Mini App', 'olymp_miniapp'),
+      compact([
+        openAppButton('🚀 Каталог в Mini App'),
         Keyboard.button.callback('⚙️ Настройки', 'menu:settings'),
-      ],
+      ]),
     ]);
   },
 
@@ -225,10 +249,10 @@ export const keyboards = {
       ]);
     }
 
-    rows.push([
+    rows.push(compact([
       Keyboard.button.link('🌐 Страница олимпиады', url),
-      Keyboard.button.openApp('📱 Открыть в Mini App', `app_${olympiadId}`),
-    ]);
+      openAppButton('📱 Открыть в Mini App', olympiadId),
+    ]));
 
     rows.push([
       Keyboard.button.callback('🏠 Главное меню', 'menu:main'),

@@ -1,7 +1,8 @@
 import type { Bot } from '@maxhub/max-bot-api';
 import { Database } from '../db/index.js';
-import { keyboards } from './keyboards.js';
+import { keyboards, setMiniAppBot } from './keyboards.js';
 import { createMaxBot } from './maxClient.js';
+import { isDemoToken } from '../config.js';
 import {
   handleStartCommand,
   handleMenuCommand,
@@ -18,6 +19,19 @@ export function setupBot(db: Database): Bot {
   bot.catch((err: any) => {
     console.error('❌ Ошибка при обработке события MAX Bot API:', err?.message || err);
   });
+
+  // Ник бота нужен кнопкам open_app, чтобы MAX открыл именно наше мини-приложение
+  if (!isDemoToken()) {
+    bot.api
+      .getMyInfo()
+      .then((info) => {
+        setMiniAppBot(info);
+        console.log(`✓ [MAX Бот] @${info.username ?? info.user_id}: кнопки Mini App привязаны к боту`);
+      })
+      .catch((err: any) => {
+        console.warn('⚠️ [MAX Бот] Не удалось получить GET /me, для кнопок Mini App используется BOT_USERNAME:', err.message);
+      });
+  }
 
   // Регистрация команд бота в меню MAX
   bot.api

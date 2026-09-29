@@ -1,0 +1,11 @@
+# Caddy получает сертификат Let's Encrypt для PUBLIC_DOMAIN и проксирует всё на сервер:
+# REST API, вебхук MAX, Swagger и Mini App (/app) отдаёт один процесс Node.js.
+{$PUBLIC_DOMAIN:localhost} {
+    encode gzip
+    reverse_proxy app:3000
+
+    log {
+        output stdout
+        format console
+    }
+}

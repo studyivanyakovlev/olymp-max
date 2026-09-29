@@ -1,0 +1,17 @@
+[Unit]
+Description=Olymp Navigator Bot & API Service
+After=network.target sing-box.service
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/opt/raspberry/bots
+EnvironmentFile=/opt/raspberry/bots/.env
+ExecStart=/usr/bin/npm --workspace=apps/server run start
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

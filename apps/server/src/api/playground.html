@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MAX Bot Playground — Олимпиадный навигатор</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --bot-bubble: #1e293b;
+      --user-bubble: #2563eb;
+      --border: #334155;
+      --accent: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Боковая панель */
+    .sidebar {
+      width: 340px;
+      background: #111827;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      gap: 16px;
+    }
+
+    .sidebar h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent);
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .sidebar p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .quick-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .quick-btn {
+      background: #1f2937;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s;
+    }
+
+    .quick-btn:hover {
+      background: #374151;
+      border-color: var(--primary);
+    }
+
+    .user-info {
+      margin-top: auto;
+      background: #1e293b;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+    }
+
+    .user-info span {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    /* Чат контейнер */
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      max-width: 900px;
+      margin: 0 auto;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      background: #0b1120;
+    }
+
+    .chat-header {
+      padding: 16px 24px;
+      background: #111827;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+
+    .chat-title h1 {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .chat-title span {
+      font-size: 0.75rem;
+      color: var(--accent);
+    }
+
+    /* Сообщения */
+    .messages-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .msg-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 80%;
+    }
+
+    .msg-group.bot {
+      align-self: flex-start;
+    }
+
+    .msg-group.user {
+      align-self: flex-end;
+    }
+
+    .bubble {
+      padding: 14px 18px;
+      border-radius: 14px;
+      font-size: 0.92rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .bot .bubble {
+      background: var(--bot-bubble);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .user .bubble {
+      background: var(--user-bubble);
+      color: white;
+    }
+
+    /* Кнопки бота */
+    .buttons-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .inline-btn {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+
+    .inline-btn:hover {
+      background: #1d4ed8;
+      transform: translateY(-1px);
+    }
+
+    .inline-btn.link-btn {
+      background: #334155;
+      text-decoration: none;
+      color: #93c5fd;
+    }
+
+    .inline-btn.link-btn:hover {
+      background: #475569;
+    }
+
+    .inline-btn.app-btn {
+      background: linear-gradient(135deg, #8b5cf6, #ec4899);
+    }
+
+    /* Поле ввода */
+    .input-bar {
+      padding: 16px 24px;
+      background: #111827;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 12px;
+    }
+
+    .input-bar input {
+      flex: 1;
+      background: #1f2937;
+      border: 1px solid var(--border);
+      padding: 12px 16px;
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    .input-bar input:focus {
+      border-color: var(--primary);
+    }
+
+    .send-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .send-btn:hover {
+      background: var(--primary-hover);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Левая панель с быстрыми действиями -->
+  <aside class="sidebar">
+    <h2>🏆 MAX Навигатор <span class="badge">Playground</span></h2>
+    <p>Интерактивная среда для проверки поведения чат-бота и напоминаний прямо в браузере.</p>
+
+    <div class="quick-actions">
+      <button class="quick-btn" onclick="sendCommand('/start')">
+        <span>🚀 Старт / Онбординг</span>
+        <code>/start</code>
+      </button>
+      <button class="quick-btn" onclick="sendCommand('/menu')">
+        <span>📋 Главное меню</span>
+        <code>/menu</code>
+      </button>
+      <button class="quick-btn" onclick="sendCommand('/my')">
+        <span>📅 Мои дедлайны</span>
+        <code>/my</code>
+      </button>
+      <button class="quick-btn" onclick="sendCommand('/settings')">
+        <span>⚙️ Настройки</span>
+        <code>/settings</code>
+      </button>
+      <button class="quick-btn" style="border-color: #f59e0b; color: #fbbf24;" onclick="triggerSchedulerTick()">
+        <span>⏱️ Сработать напоминание (tick)</span>
+        <code>/tick</code>
+      </button>
+      <button class="quick-btn" style="border-color: #ef4444; color: #f87171;" onclick="sendCommand('/delete')">
+        <span>🗑 Удалить профиль</span>
+        <code>/delete</code>
+      </button>
+    </div>
+
+    <div class="user-info">
+      Пользователь: <span id="userIdLabel">web_tester</span><br>
+      База данных: <span>PostgreSQL (PGlite)</span>
+    </div>
+  </aside>
+
+  <!-- Окно чата -->
+  <main class="chat-container">
+    <header class="chat-header">
+      <div class="avatar">🤖</div>
+      <div class="chat-title">
+        <h1>Олимпиадный навигатор в MAX</h1>
+        <span>● Онлайн (Симулятор)</span>
+      </div>
+    </header>
+
+    <div class="messages-area" id="messagesArea">
+      <!-- Сообщения добавляются динамически -->
+    </div>
+
+    <form class="input-bar" id="chatForm" onsubmit="handleFormSubmit(event)">
+      <input type="text" id="userInput" placeholder="Введите команду (например, /start) или сообщение..." autocomplete="off">
+      <button type="submit" class="send-btn">Отправить</button>
+    </form>
+  </main>
+
+  <script>
+    const userId = 'web_user_' + Math.floor(Math.random() * 9000 + 1000);
+    document.getElementById('userIdLabel').textContent = userId;
+
+    const messagesArea = document.getElementById('messagesArea');
+    const userInput = document.getElementById('userInput');
+
+    function appendUserMessage(text) {
+      const group = document.createElement('div');
+      group.className = 'msg-group user';
+      group.innerHTML = `<div class="bubble">${escapeHtml(text)}</div>`;
+      messagesArea.appendChild(group);
+      scrollToBottom();
+    }
+
+    let lastBotGroup = null;
+
+    function renderBotContent(text, attachments = []) {
+      let html = `<div class="bubble">${escapeHtml(text)}</div>`;
+
+      if (attachments && attachments.length > 0) {
+        html += `<div class="buttons-grid">`;
+        for (const att of attachments) {
+          if (att.payload && att.payload.buttons) {
+            for (const row of att.payload.buttons) {
+              html += `<div class="btn-row">`;
+              for (const btn of row) {
+                if (btn.type === 'callback') {
+                  html += `<button class="inline-btn" onclick="sendCallback('${escapeQuotes(btn.payload)}')">${escapeHtml(btn.text)}</button>`;
+                } else if (btn.type === 'link') {
+                  html += `<a href="${btn.url}" target="_blank" class="inline-btn link-btn">${escapeHtml(btn.text)} ↗</a>`;
+                } else if (btn.type === 'open_app') {
+                  html += `<button class="inline-btn app-btn" onclick="alert('Открытие Mini App (ID: ${btn.web_app})')">${escapeHtml(btn.text)} 📱</button>`;
+                }
+              }
+              html += `</div>`;
+            }
+          }
+        }
+        html += `</div>`;
+      }
+      return html;
+    }
+
+    function appendBotMessage(text, attachments = []) {
+      const group = document.createElement('div');
+      group.className = 'msg-group bot';
+      group.innerHTML = renderBotContent(text, attachments);
+      messagesArea.appendChild(group);
+      lastBotGroup = group;
+      scrollToBottom();
+    }
+
+    function editBotMessage(text, attachments = []) {
+      if (lastBotGroup) {
+        lastBotGroup.innerHTML = renderBotContent(text, attachments);
+        scrollToBottom();
+      } else {
+        appendBotMessage(text, attachments);
+      }
+    }
+
+    function scrollToBottom() {
+      messagesArea.scrollTop = messagesArea.scrollHeight;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function escapeQuotes(str) {
+      return (str || '').replace(/'/g, "\\'");
+    }
+
+    async function sendInteraction(action, value) {
+      try {
+        const response = await fetch('/api/test/interact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, action, value })
+        });
+        const data = await response.json();
+        if (data.messages) {
+          for (const msg of data.messages) {
+            if (msg.isEdit && lastBotGroup) {
+              editBotMessage(msg.text, msg.attachments);
+            } else {
+              appendBotMessage(msg.text, msg.attachments);
+            }
+          }
+        }
+      } catch (err) {
+        appendBotMessage('❌ Ошибка связи с сервером: ' + err.message);
+      }
+    }
+
+    function sendCommand(cmd) {
+      appendUserMessage(cmd);
+      sendInteraction('command', cmd);
+    }
+
+    function sendCallback(payload) {
+      sendInteraction('callback', payload);
+    }
+
+    function triggerSchedulerTick() {
+      appendUserMessage('/tick (симуляция наступления времени напоминания)');
+      sendInteraction('command', '/tick');
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      const val = userInput.value.trim();
+      if (!val) return;
+      userInput.value = '';
+      appendUserMessage(val);
+      sendInteraction('command', val);
+    }
+
+    // Автоматический старт при загрузке страницы
+    window.addEventListener('DOMContentLoaded', () => {
+      sendCommand('/start');
+    });
+  </script>
+</body>
+</html>

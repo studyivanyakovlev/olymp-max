@@ -1,0 +1,7 @@
+node_modules/
+dist/
+public/mockServiceWorker.js
+*.tsbuildinfo
+.env
+.env.*
+!.env.example

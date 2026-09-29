@@ -9,7 +9,14 @@ coverage/
 .env.*
 !.env.example
 
+.pglite/
+.data/
+*.pdf
+
 .DS_Store
 Thumbs.db
+*.local
 .idea/
 .vscode/
+tunnel_url.txt
+

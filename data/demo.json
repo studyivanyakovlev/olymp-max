@@ -1,0 +1,36 @@
+[
+  {
+    "id": "demo-jury-olympiad",
+    "title": "⚡ Демо-олимпиада MAX 2026 (для жюри и проверки)",
+    "organizer": "Команда Олимпиадного Навигатора & MAX Hub",
+    "rsosh_level": 1,
+    "subjects": ["informatics", "math", "physics"],
+    "grade_from": 8,
+    "grade_to": 11,
+    "benefits_note": "Демонстрационная олимпиада для быстрой проверки жюри. Первое напоминание приходит ровно через 1 минуту после подписки!",
+    "url": "https://max.ru/olympiad-demo",
+    "source_url": "https://platform-api2.max.ru/docs",
+    "verified_at": "2026-09-27T12:00:00+03:00",
+    "is_demo": true,
+    "stages": [
+      {
+        "id": "demo-stage-reg",
+        "kind": "registration",
+        "name": "Регистрация (демо)",
+        "starts_at": "2026-09-01T00:00:00+03:00",
+        "ends_at": "2026-10-31T23:59:00+03:00",
+        "region_code": null,
+        "format": "online"
+      },
+      {
+        "id": "demo-stage-tour",
+        "kind": "qualifying",
+        "name": "Отборочный тур (демо)",
+        "starts_at": "2026-11-01T10:00:00+03:00",
+        "ends_at": "2026-11-05T20:00:00+03:00",
+        "region_code": null,
+        "format": "online"
+      }
+    ]
+  }
+]

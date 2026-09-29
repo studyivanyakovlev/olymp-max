@@ -1,5 +1,5 @@
 [Unit]
-Description=Olymp Navigator Bot & API Service
+Description=Олимпиадный навигатор: бот MAX и API
 After=network.target sing-box.service
 
 [Service]

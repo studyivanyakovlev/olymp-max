@@ -262,9 +262,7 @@ function Layout() {
           <span className="brand-mark">
             <Sparkles size={20} />
           </span>
-          <span>
-            олимп<span className="brand-dot">.</span>
-          </span>
+          <span className="brand-name">Олимпиадный навигатор</span>
         </div>
         <p>
           Ваш спокойный путь
@@ -382,7 +380,7 @@ function Catalog() {
           <span className="brand-mark">
             <Sparkles size={18} />
           </span>
-          олимп<span className="brand-dot">.</span>
+          <span className="brand-name">Олимпиадный навигатор</span>
         </div>
         <span className="topline-caption">Сезон 2026/27</span>
       </div>

@@ -64,19 +64,20 @@ export async function getDb(): Promise<Database> {
   } else {
     // Храним базу в домашней директории пользователя (~/.olymp_max_pglite),
     // чтобы избежать сбоев блокировок файловой системы на смонтированных NTFS дисках (/mnt/...)
-    const dataDir = path.resolve(os.homedir(), '.olymp_max_pglite');
+    const dataDir = process.env.PGLITE_DIR || path.resolve(os.homedir(), '.olymp_max_pglite');
     if (!fs.existsSync(dataDir)) {
       fs.mkdirSync(dataDir, { recursive: true });
     }
     pglite = new PGlite(dataDir);
   }
   await pglite.waitReady;
-  console.log(`✓ Запущен встроенный локальный PostgreSQL (PGlite: ${isTest ? 'in-memory' : '~/.olymp_max_pglite'})`);
+  console.log(`✓ Запущен встроенный локальный PostgreSQL (PGlite: ${isTest ? 'in-memory' : process.env.PGLITE_DIR || '~/.olymp_max_pglite'})`);
 
   const db: Database = {
     async query<T = any>(sql: string, params?: any[]): Promise<QueryResult<T>> {
       const res = await pglite.query<T>(sql, params);
-      return { rows: res.rows, rowCount: res.rows.length };
+      // rowCount из тега команды, как в pg: для INSERT/UPDATE/DELETE без RETURNING rows пуст
+      return { rows: res.rows, rowCount: res.rowCount ?? res.rows.length };
     },
     async close() {
       await pglite.close();

@@ -8,17 +8,25 @@
     "apps/miniapp"
   ],
   "scripts": {
+    "build:shared": "npm --workspace=packages/shared run build",
     "local": "./start_local.sh",
+    "predev": "npm run build:shared",
     "dev": "npm --workspace=apps/server run dev",
+    "predev:server": "npm run build:shared",
     "dev:server": "npm --workspace=apps/server run dev",
     "dev:app": "npm --workspace=apps/miniapp run dev",
-    "build": "npm --workspace=packages/shared run build && npm --workspace=apps/server run build && npm --workspace=apps/miniapp run build",
+    "build": "npm run build:shared && npm --workspace=apps/server run build && npm --workspace=apps/miniapp run build",
     "build:app": "npm --workspace=apps/miniapp run build",
     "start": "npm --workspace=apps/server run start",
+    "preseed": "npm run build:shared",
     "seed": "npm --workspace=apps/server run seed",
+    "pretest": "npm run build:shared",
     "test": "npm --workspace=apps/server run test",
+    "presimulator": "npm run build:shared",
     "simulator": "npm --workspace=apps/server run simulator",
+    "prechat": "npm run build:shared",
     "chat": "npm --workspace=apps/server run chat",
+    "prelint": "npm run build:shared",
     "lint": "npm --workspace=apps/server run lint"
   },
   "devDependencies": {

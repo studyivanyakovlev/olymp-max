@@ -79,19 +79,45 @@ function dateText(
     timeZone: 'Europe/Moscow',
   }).format(new Date(value));
 }
+// Срок ближайшей ещё открытой регистрации; если все закрыты — последней из них
 function deadline(item: Olympiad) {
-  return item.stages.find((stage) => stage.kind === 'registration')?.ends_at;
+  const ends = item.stages
+    .filter((stage) => stage.kind === 'registration' && stage.ends_at)
+    .map((stage) => new Date(stage.ends_at!).getTime())
+    .sort((a, b) => a - b);
+  const upcoming = ends.find((time) => time >= Date.now());
+  const time = upcoming ?? ends[ends.length - 1];
+  return time === undefined ? undefined : new Date(time).toISOString();
+}
+function byStageDate(a: Stage, b: Stage) {
+  const end = (stage: Stage) => new Date(stage.ends_at ?? stage.starts_at).getTime();
+  return new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime() || end(a) - end(b);
+}
+function stageTitle(stage: Stage) {
+  return stage.name || stageName[stage.kind];
+}
+function stageEventTitle(stage: Stage) {
+  if (stage.kind !== 'registration') return stageTitle(stage);
+  const name = stage.name ?? '';
+  return name.startsWith('Регистрация')
+    ? `Закрытие регистрации${name.slice('Регистрация'.length)}`
+    : name
+      ? `Закрытие: ${name}`
+      : 'Закрытие регистрации';
 }
 function daysLeft(value?: string | null) {
   if (!value) return null;
   return Math.ceil((new Date(value).getTime() - Date.now()) / 86400000);
 }
-function olympiadCount(value: number) {
+function plural(value: number, one: string, few: string, many: string) {
   const tail = value % 100;
-  if (tail >= 11 && tail <= 14) return `${value} олимпиад`;
-  if (value % 10 === 1) return `${value} олимпиада`;
-  if ([2, 3, 4].includes(value % 10)) return `${value} олимпиады`;
-  return `${value} олимпиад`;
+  if (tail >= 11 && tail <= 14) return many;
+  if (value % 10 === 1) return one;
+  if ([2, 3, 4].includes(value % 10)) return few;
+  return many;
+}
+function olympiadCount(value: number) {
+  return `${value} ${plural(value, 'олимпиада', 'олимпиады', 'олимпиад')}`;
 }
 function DeadlineTag({ value }: { value?: string | null }) {
   const days = daysLeft(value);
@@ -693,7 +719,7 @@ function OlympiadDetail() {
                     </div>
                   </div>
                   <div className="timeline">
-                    {item.stages.map((stage, index) => (
+                    {[...item.stages].sort(byStageDate).map((stage, index) => (
                       <StageRow key={stage.id} stage={stage} index={index} />
                     ))}
                   </div>
@@ -787,7 +813,7 @@ function StageRow({ stage, index }: { stage: Stage; index: number }) {
     <div className="timeline-row">
       <span className="timeline-number">{String(index + 1).padStart(2, '0')}</span>
       <div>
-        <strong>{stageName[stage.kind]}</strong>
+        <strong>{stageTitle(stage)}</strong>
         <p>
           {dateText(stage.starts_at, { day: 'numeric', month: 'long', year: 'numeric' })}
           {stage.ends_at
@@ -880,11 +906,13 @@ function Season() {
           </div>
           <div>
             <strong>{joined.length}</strong>
-            <span>олимпиад в твоём сезоне</span>
+            <span>{plural(joined.length, 'олимпиада', 'олимпиады', 'олимпиад')} в твоём сезоне</span>
           </div>
           <div>
             <strong>{events.length}</strong>
-            <span>предстоящих событий</span>
+            <span>
+              {plural(events.length, 'предстоящее событие', 'предстоящих события', 'предстоящих событий')}
+            </span>
           </div>
         </div>
         <div className="season-layout">
@@ -908,11 +936,7 @@ function Season() {
                       <small>{dateText(date, { month: 'short' })}</small>
                     </span>
                     <span className="event-info">
-                      <strong>
-                        {stage.kind === 'registration'
-                          ? 'Закрытие регистрации'
-                          : stageName[stage.kind]}
-                      </strong>
+                      <strong>{stageEventTitle(stage)}</strong>
                       <small>{item.title}</small>
                     </span>
                     <ChevronRight size={19} />

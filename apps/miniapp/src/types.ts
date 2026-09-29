@@ -4,6 +4,7 @@ export type SubscriptionStatus = 'interested' | 'registered' | 'done' | 'dropped
 export interface Stage {
   id: string;
   kind: StageKind;
+  name?: string;
   starts_at: string;
   ends_at?: string | null;
   region_code?: string | null;

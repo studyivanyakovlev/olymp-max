@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { MaxUI } from '@maxhub/max-ui';
 import '@maxhub/max-ui/dist/styles.css';
+import '@fontsource-variable/manrope';
 import './styles.css';
 import App from './App';
 

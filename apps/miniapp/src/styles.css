@@ -1,11 +1,21 @@
 
 :root {
-  font-family: Manrope, Arial, sans-serif;
+  font-family: 'Manrope Variable', Manrope, Arial, sans-serif;
   color: #1a2438;
   background: #f5f6f8;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
+
+/* MAX UI задаёт на своём корне системный шрифт (Roboto) через переменные.
+   Возвращаем задуманный Manrope: он встроен в сборку и не зависит от шрифтов телефона. */
+.app-shell {
+  --font: 'Manrope Variable', Manrope, Arial, sans-serif;
+  --family-base: 'Manrope Variable', Manrope, Arial, sans-serif;
+  --family-headers: 'Manrope Variable', Manrope, Arial, sans-serif;
+  font-family: 'Manrope Variable', Manrope, Arial, sans-serif;
+}
+
 * {
   box-sizing: border-box;
 }

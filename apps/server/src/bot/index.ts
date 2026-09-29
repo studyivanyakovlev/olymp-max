@@ -10,7 +10,84 @@ import {
   handleSettingsCommand,
   handleDeleteCommand,
   handleCallbackQuery,
+  BotContextLike,
 } from './handlers.js';
+
+function adaptMaxContext(ctx: any): BotContextLike {
+  const rawUser = ctx.user ?? ctx.update?.callback?.user ?? ctx.update?.user;
+  const rawCallback = ctx.callback ?? ctx.update?.callback;
+  const userId = String(rawUser?.user_id ?? rawUser?.id ?? ctx.chatId ?? '');
+  const messageId = ctx.messageId ?? ctx.update?.message?.body?.mid ?? ctx.update?.message_id;
+
+  const adapted: BotContextLike = {
+    user: {
+      id: userId,
+      username: rawUser?.username ?? undefined,
+      first_name: rawUser?.first_name ?? undefined,
+    },
+    chatId: ctx.chatId ?? userId,
+    messageId,
+    startPayload: ctx.startPayload,
+    callback: rawCallback
+      ? {
+          callback_id: rawCallback.callback_id,
+          payload: rawCallback.payload,
+          message_id: messageId,
+        }
+      : undefined,
+    async reply(text: string, extra?: any) {
+      if (ctx.chatId) {
+        try {
+          return await ctx.reply(text, extra);
+        } catch (e: any) {
+          console.warn('ctx.reply(chatId) error, trying sendMessageToUser:', e.message);
+        }
+      }
+      const numUserId = Number(rawUser?.user_id ?? rawUser?.id ?? userId);
+      if (numUserId && ctx.api?.sendMessageToUser) {
+        return await ctx.api.sendMessageToUser(numUserId, text, extra);
+      }
+      return ctx.reply(text, extra);
+    },
+    async editMessageText(text: string, extra?: any) {
+      if (messageId && ctx.api?.editMessage) {
+        try {
+          return await ctx.api.editMessage(messageId, { text, ...extra });
+        } catch (e: any) {
+          console.warn('MAX api.editMessage error, fallback to reply:', e.message);
+        }
+      } else if (ctx.editMessage) {
+        try {
+          return await ctx.editMessage({ text, ...extra });
+        } catch (e: any) {
+          console.warn('MAX ctx.editMessage error, fallback to reply:', e.message);
+        }
+      }
+      return adapted.reply(text, extra);
+    },
+    async answerOnCallback(extra?: any) {
+      const cbId = rawCallback?.callback_id;
+      const payload = extra?.message
+        ? { message: extra.message }
+        : { notification: extra?.notification || 'OK' };
+      if (cbId && ctx.api?.answerOnCallback) {
+        try {
+          return await ctx.api.answerOnCallback(cbId, payload);
+        } catch (e: any) {
+          console.warn('MAX answerOnCallback error:', e?.message || e);
+        }
+      } else if (ctx.answerOnCallback && rawCallback) {
+        try {
+          return await ctx.answerOnCallback(payload);
+        } catch {
+          // Игнорируем ошибку ответа на callback если он уже закрыт
+        }
+      }
+    },
+  };
+
+  return adapted;
+}
 
 export function setupBot(db: Database): Bot {
   const bot = createMaxBot();
@@ -50,7 +127,7 @@ export function setupBot(db: Database): Bot {
   // Команда /start
   bot.command('start', async (ctx) => {
     try {
-      await handleStartCommand(ctx as any, db);
+      await handleStartCommand(adaptMaxContext(ctx), db);
     } catch (e: any) {
       console.error('Ошибка в /start:', e.message);
       await ctx.reply('Произошла ошибка при загрузке. Нажмите /start для повторной попытки.').catch(() => {});
@@ -60,7 +137,7 @@ export function setupBot(db: Database): Bot {
   // Событие bot_started (когда пользователь начинает диалог или переходит по ссылке)
   bot.on('bot_started', async (ctx) => {
     try {
-      await handleStartCommand(ctx as any, db);
+      await handleStartCommand(adaptMaxContext(ctx), db);
     } catch (e: any) {
       console.error('Ошибка в bot_started:', e.message);
     }
@@ -69,7 +146,7 @@ export function setupBot(db: Database): Bot {
   // Команда /menu
   bot.command('menu', async (ctx) => {
     try {
-      await handleMenuCommand(ctx as any, db);
+      await handleMenuCommand(adaptMaxContext(ctx), db);
     } catch (e: any) {
       console.error('Ошибка в /menu:', e.message);
     }
@@ -99,7 +176,7 @@ export function setupBot(db: Database): Bot {
   // Команда /my (мои дедлайны)
   bot.command('my', async (ctx) => {
     try {
-      await handleMyCommand(ctx as any, db);
+      await handleMyCommand(adaptMaxContext(ctx), db);
     } catch (e: any) {
       console.error('Ошибка в /my:', e.message);
     }
@@ -108,7 +185,7 @@ export function setupBot(db: Database): Bot {
   // Команда /settings
   bot.command('settings', async (ctx) => {
     try {
-      await handleSettingsCommand(ctx as any, db);
+      await handleSettingsCommand(adaptMaxContext(ctx), db);
     } catch (e: any) {
       console.error('Ошибка в /settings:', e.message);
     }
@@ -117,7 +194,7 @@ export function setupBot(db: Database): Bot {
   // Команда /delete
   bot.command('delete', async (ctx) => {
     try {
-      await handleDeleteCommand(ctx as any, db);
+      await handleDeleteCommand(adaptMaxContext(ctx), db);
     } catch (e: any) {
       console.error('Ошибка в /delete:', e.message);
     }
@@ -126,17 +203,9 @@ export function setupBot(db: Database): Bot {
   // Обработка нажатий на инлайн-кнопки (message_callback)
   bot.on('message_callback', async (ctx) => {
     try {
-      const adapted = {
-        ...ctx,
-        reply: (text: string, extra?: any) => ctx.reply(text, extra),
-        editMessageText: async (text: string, extra?: any) => {
-          if ((ctx as any).editMessage) {
-            return (ctx as any).editMessage({ body: { text, ...extra } });
-          }
-          return ctx.reply(text, extra);
-        },
-      };
-      await handleCallbackQuery(adapted as any, db);
+      const adapted = adaptMaxContext(ctx);
+      console.log(`[MAX Callback] от пользователя ${adapted.user?.id}: payload="${adapted.callback?.payload}"`);
+      await handleCallbackQuery(adapted, db);
     } catch (e: any) {
       console.error('Ошибка при обработке callback:', e.message);
     }

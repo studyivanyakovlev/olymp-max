@@ -12,6 +12,16 @@ async function boot() {
   }
 
   try {
+    const max = (window as any).WebApp;
+    if (max?.ready) {
+      max.ready();
+    }
+    if (max?.expand) {
+      max.expand();
+    }
+  } catch {}
+
+  try {
     const tg = (window as any).Telegram?.WebApp;
     if (tg) {
       tg.ready();

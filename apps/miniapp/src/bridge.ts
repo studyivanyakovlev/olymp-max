@@ -14,6 +14,8 @@ interface MaxWebApp {
   };
   openLink?(url: string): void;
   shareMaxContent?(params: { text?: string; link?: string }): void;
+  ready?(): void;
+  expand?(): void;
 }
 
 declare global {
@@ -91,10 +93,17 @@ export function shareOlympiad(id: string, title: string) {
 const FILTER_KEY = 'olymp-filters-v1';
 export async function loadFilters(): Promise<string | null> {
   try {
-    return inMax()
-      ? ((await bridge()?.DeviceStorage?.getItem(FILTER_KEY)) ??
-          localStorage.getItem(FILTER_KEY))
-      : localStorage.getItem(FILTER_KEY);
+    if (inMax() && bridge()?.DeviceStorage) {
+      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 400));
+      const fetchPromise = bridge()!.DeviceStorage!.getItem(FILTER_KEY).then((raw: any) => {
+        if (!raw) return null;
+        if (typeof raw === 'object' && 'value' in raw) return raw.value;
+        return typeof raw === 'string' ? raw : null;
+      });
+      const res = await Promise.race([fetchPromise, timeoutPromise]);
+      if (res) return res;
+    }
+    return localStorage.getItem(FILTER_KEY);
   } catch {
     return localStorage.getItem(FILTER_KEY);
   }

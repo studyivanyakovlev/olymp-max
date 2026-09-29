@@ -45,7 +45,7 @@ export function setMiniAppBot(info: { username?: string | null; user_id?: number
 }
 
 function openAppButton(text: string, startParam?: string) {
-  if (miniAppBot.username) return Keyboard.button.openApp(text, miniAppBot.username, undefined, startParam);
+  if (miniAppBot.username) return Keyboard.button.openApp(text, miniAppBot.username, miniAppBot.userId ?? undefined, startParam);
   if (miniAppBot.userId || isDemoToken()) {
     return { type: 'open_app' as const, text, contact_id: miniAppBot.userId, payload: startParam ?? null };
   }
@@ -233,6 +233,9 @@ export const keyboards = {
         openAppButton('🚀 Каталог в Mini App'),
         Keyboard.button.callback('⚙️ Настройки', 'menu:settings'),
       ]),
+      [
+        Keyboard.button.link('🌐 Открыть каталог в браузере', config.miniappUrl),
+      ],
     ]);
   },
 

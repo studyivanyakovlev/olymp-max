@@ -41,7 +41,8 @@ async function bootstrap() {
   // 4. Запуск HTTP REST API (Fastify)
   const server = await createServer(db, bot);
 
-  await server.listen({ port: config.port, host: '0.0.0.0' });
+  // HOST=127.0.0.1 — когда сервер стоит за nginx и наружу его открывать не нужно
+  await server.listen({ port: config.port, host: process.env.HOST || '0.0.0.0' });
   console.log(`✓ HTTP REST API доступен по адресу: http://localhost:${config.port}`);
   console.log(`✓ OpenAPI Swagger документация:    http://localhost:${config.port}/docs`);
   console.log(`✓ Проверка работоспособности:       http://localhost:${config.port}/api/health`);

@@ -224,7 +224,7 @@ export const keyboards = {
 
   // Главное меню
   mainMenu() {
-    return Keyboard.inlineKeyboard([
+    const rows: any[][] = [
       [
         Keyboard.button.callback('🎯 Персональная подборка', 'menu:recommendations'),
         Keyboard.button.callback('📅 Мои дедлайны', 'menu:deadlines'),
@@ -233,10 +233,13 @@ export const keyboards = {
         openAppButton('🚀 Каталог в Mini App'),
         Keyboard.button.callback('⚙️ Настройки', 'menu:settings'),
       ]),
-      [
-        Keyboard.button.link('🌐 Открыть каталог в браузере', config.miniappUrl),
-      ],
-    ]);
+    ];
+    // Ссылку-кнопку MAX принимает только с публичным адресом: http://localhost отклонил бы всё меню
+    const url = config.miniappUrl;
+    if (url.startsWith('https://')) {
+      rows.push([Keyboard.button.link('🌐 Открыть каталог в браузере', url)]);
+    }
+    return Keyboard.inlineKeyboard(rows);
   },
 
   // Кнопки для карточки олимпиады

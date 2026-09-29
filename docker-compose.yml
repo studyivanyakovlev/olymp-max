@@ -1,10 +1,12 @@
-version: '3.8'
-
+# Запуск: docker compose up -d --build
+# С HTTPS на своём домене: PUBLIC_DOMAIN=bot.example.ru docker compose --profile https up -d --build
 services:
   app:
     build:
       context: .
       dockerfile: apps/server/Dockerfile
+      args:
+        VITE_BOT_NAME: ${BOT_USERNAME:-}
     container_name: olymp_max_app
     restart: unless-stopped
     ports:
@@ -12,10 +14,13 @@ services:
     environment:
       - PORT=3000
       - NODE_ENV=production
-      - BOT_TOKEN=${BOT_TOKEN}
-      - BOT_MODE=${BOT_MODE:-webhook}
-      - PUBLIC_URL=${PUBLIC_URL}
-      - MINIAPP_URL=${MINIAPP_URL}
+      - BOT_TOKEN=${BOT_TOKEN:-}
+      - BOT_USERNAME=${BOT_USERNAME:-}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - BOT_MODE=${BOT_MODE:-polling}
+      - PUBLIC_URL=${PUBLIC_URL:-}
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET:-}
+      - MINIAPP_URL=${MINIAPP_URL:-}
       - DEMO_MODE=${DEMO_MODE:-true}
       - DATABASE_URL=postgres://${POSTGRES_USER:-olymp_user}:${POSTGRES_PASSWORD:-olymp_pass}@db:5432/${POSTGRES_DB:-olymp_db}
     depends_on:
@@ -42,11 +47,14 @@ services:
     image: caddy:2-alpine
     container_name: olymp_max_caddy
     restart: unless-stopped
+    profiles: ["https"]
+    environment:
+      - PUBLIC_DOMAIN=${PUBLIC_DOMAIN:-localhost}
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./deploy/Caddyfile:/etc/caddy/Caddyfile
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:

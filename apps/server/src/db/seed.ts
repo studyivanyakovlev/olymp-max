@@ -3,6 +3,7 @@ import path from 'path';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import { getDb, Database } from './index.js';
+import { config } from '../config.js';
 import { recalculateStageReminders } from '../domain/reminders.js';
 
 const ajv = new (Ajv as any)({ allErrors: true });
@@ -154,7 +155,8 @@ export async function runSeed(existingDb?: Database) {
     console.warn(`! Файл ${olympiadsFile} не найден`);
   }
 
-  if (fs.existsSync(demoFile)) {
+  // Демо-олимпиада с напоминанием через минуту нужна для проверки жюри; DEMO_MODE=false её отключает
+  if (config.demoMode && fs.existsSync(demoFile)) {
     console.log(`Импорт демо-олимпиады для жюри из ${demoFile}...`);
     const resDemo = await importDataset(demoFile, db);
     console.log(`✓ Загружено демо-олимпиад: ${resDemo.olympiadsCount}`);

@@ -1,0 +1,11 @@
+# Секреты и локальные артефакты не должны попадать в образ
+.env
+.env.*
+!.env.example
+tunnel_url.txt
+.git
+**/node_modules
+**/dist
+**/.vite
+*.pdf
+*.log

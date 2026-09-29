@@ -21,6 +21,9 @@ async function boot() {
     }
   } catch {}
 
+  // Внутри Telegram ждём его скрипт (грузится из index.html только там), в MAX промис уже выполнен
+  await (window as any).__tgReady;
+
   try {
     const tg = (window as any).Telegram?.WebApp;
     if (tg) {

@@ -260,7 +260,7 @@ function Layout() {
       <div className="desktop-rail">
         <div className="brand-lockup">
           <span className="brand-mark">
-            <Sparkles size={20} />
+            <img src="/assets/app-icon.png" alt="" />
           </span>
           <span className="brand-name">Олимпиадный навигатор</span>
         </div>
@@ -378,7 +378,7 @@ function Catalog() {
       <div className="topline">
         <div className="mobile-brand">
           <span className="brand-mark">
-            <Sparkles size={18} />
+            <img src="/assets/app-icon.png" alt="" />
           </span>
           <span className="brand-name">Олимпиадный навигатор</span>
         </div>

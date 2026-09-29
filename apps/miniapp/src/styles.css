@@ -87,14 +87,18 @@ a {
 }
 .brand-mark {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  flex-shrink: 0;
   width: 35px;
   height: 35px;
   border-radius: 11px;
+  overflow: hidden;
   background: #7660ee;
-  color: #fff;
   box-shadow: 0 7px 16px #7660ee30;
+}
+.brand-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 .brand-name {
   font-size: 19px;

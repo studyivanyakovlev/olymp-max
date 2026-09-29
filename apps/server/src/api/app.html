@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Олимпиадный навигатор</title>
+  <link rel="icon" type="image/png" href="/assets/app-icon.png">
   
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -82,7 +83,13 @@
       align-items: center;
       justify-content: center;
       font-size: 1.25rem;
+      overflow: hidden;
       box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    }
+    .brand-icon img {
+      display: block;
+      width: 100%;
+      height: 100%;
     }
 
     .brand-title {
@@ -723,7 +730,7 @@
   <!-- Верхняя панель -->
   <header>
     <div class="brand">
-      <div class="brand-icon">🏆</div>
+      <div class="brand-icon"><img src="/assets/app-icon.png" alt=""></div>
       <div class="brand-title">Олимпиадный навигатор</div>
     </div>
     <div class="user-pill" id="userPillBtn" title="Нажмите для смены профиля">
